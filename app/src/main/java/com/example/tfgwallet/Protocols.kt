@@ -5,6 +5,9 @@ import java.io.File
 import java.math.BigInteger
 import java.security.MessageDigest
 import java.security.SecureRandom
+import java.security.spec.KeySpec
+import javax.crypto.SecretKeyFactory
+import javax.crypto.spec.PBEKeySpec
 
 
 class Protocols {
@@ -18,9 +21,7 @@ class Protocols {
             for (byte in bytes) {
                 stringBuilder.append(String.format("%02x", byte))
             }
-
             return stringBuilder.toString()
-
         }
 
 
@@ -29,18 +30,17 @@ class Protocols {
             // generate random sequence (entropy) between 128 to 256 bits
             // first check that size is within the boundaries
             val secureRandom = SecureRandom()
-            var entropy = BigInteger(size, secureRandom).toString(16)
+            var entropy = BigInteger(size, secureRandom).toString(16) // fix when the first char is 0
             println("Entropy length ${entropy.length}")
             println(entropy)
             var checksum: String = sha256(entropy)
-            var modChecksum: String
             println(checksum)
             // only keep first size/32 bits and concatenate at the end of the initial entropy
             println("Char to drop ${checksum.length - (size / 32)}")
             println(checksum.length)
-            modChecksum = checksum.dropLast(checksum.length - (size / 32))
+            var modChecksum: String = checksum.dropLast(checksum.length - (size / 32))
             println(modChecksum)
-            entropy = entropy + modChecksum
+            entropy += modChecksum
             println(entropy)
 
             entropy = BigInteger(entropy, 16).toString(2)
@@ -61,14 +61,25 @@ class Protocols {
             println(System.getProperty("user.dir"))
             // read file and match every code to its word to give the eventual passphrase
             var words = readFile("app/resources/words.txt")
-            var passphrase: String = ""
+            var mnemonic: String = ""
             for (group in t_groups) { // for every number get the i-th word
-                passphrase += words[Integer.parseInt(group)] + " "
+                mnemonic += words[Integer.parseInt(group)] + " "
             }
-            println(passphrase)
+            println(mnemonic)
             // convert to mnemonic words based on https://github.com/bitcoin/bips/blob/master/bip-0039/english.txt file
 
-            // create seed
+            // create seed using PBKDF2
+
+            val salt = "salt" // Tu salt aquí
+            val iterations = 2048
+            val keyLength = 64 * 8 // 64 bytes, 512 bits
+
+            val keySpec: KeySpec = PBEKeySpec(password.toCharArray(), salt.toByteArray(), iterations, keyLength)
+            val factory: SecretKeyFactory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA512")
+            val key = factory.generateSecret(keySpec).toString()
+
+            println("PBKDF2 generated key: $key")
+
 
 
     }
