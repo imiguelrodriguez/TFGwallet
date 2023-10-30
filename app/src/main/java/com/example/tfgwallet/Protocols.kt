@@ -25,7 +25,7 @@ class Protocols {
         }
 
 
-        fun bip39(size: Int, password: String) {
+        fun bip39(size: Int, password: String) : Pair<String, ByteArray> {
 
             // generate random sequence (entropy) between 128 to 256 bits
             // first check that size is within the boundaries
@@ -70,16 +70,19 @@ class Protocols {
 
             // create seed using PBKDF2
 
-            val salt = "salt" // Tu salt aquí
+            val salt = mnemonic + password // Tu salt aquí
             val iterations = 2048
             val keyLength = 64 * 8 // 64 bytes, 512 bits
 
             val keySpec: KeySpec = PBEKeySpec(password.toCharArray(), salt.toByteArray(), iterations, keyLength)
             val factory: SecretKeyFactory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA512")
-            val key = factory.generateSecret(keySpec).toString()
+            var key = factory.generateSecret(keySpec).encoded
 
-            println("PBKDF2 generated key: $key")
+            val hexKey = key.joinToString("") { "%02x".format(it) }
 
+            println("PBKDF2 generated key: $hexKey")
+
+            return Pair(mnemonic, key)
 
 
     }
