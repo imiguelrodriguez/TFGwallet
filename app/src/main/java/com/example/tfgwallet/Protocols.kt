@@ -118,8 +118,8 @@ class Protocols {
 
         }
 
-        fun parse256(p: Int) {
-
+        fun parse256(p: ByteArray): Int {
+            return ByteBuffer.wrap(p).int
         }
 
         val bytes32 = ser32(384)
@@ -128,13 +128,15 @@ class Protocols {
         for (byte in bytes32) {
             print("$byte, ")
         }
-        print("]")
+        println("]")
 
         print("[")
         for (byte in bytes256) {
             print("$byte, ")
         }
-        print("]")
+        println("]")
+
+        println("Original number is ${parse256(bytes256)}")
     }
 
     }
