@@ -1,13 +1,17 @@
 package com.example.tfgwallet
+import android.graphics.Point
+import com.example.tfgwallet.Protocols.Companion.bip32
 import com.example.tfgwallet.Protocols.Companion.bip39
 import com.example.tfgwallet.Protocols.Companion.sha256
 import java.io.File
 import java.math.BigInteger
+import java.nio.ByteBuffer
 import java.security.MessageDigest
 import java.security.SecureRandom
 import java.security.spec.KeySpec
 import javax.crypto.SecretKeyFactory
 import javax.crypto.spec.PBEKeySpec
+import kotlin.experimental.and
 
 
 class Protocols {
@@ -91,13 +95,49 @@ class Protocols {
             return file.readLines()
         }
 
-    }
+
 
     fun bip32(seed: String) {
+        fun point(p: Point) {
 
+        }
+
+        fun getBytesFromInt(int: Int, size: Int) : ByteArray {
+            return ByteBuffer.allocate(size).putInt(int).array()
+        }
+
+        fun ser32(i: Int) : ByteArray {
+            return getBytesFromInt(i, 4)
+        }
+
+        fun ser256(p: Int): ByteArray {
+            return getBytesFromInt(p, 32)
+        }
+
+        fun serP(P: Point) {
+
+        }
+
+        fun parse256(p: Int) {
+
+        }
+
+        val bytes32 = ser32(384)
+        val bytes256 = ser256(123109823)
+        print("[")
+        for (byte in bytes32) {
+            print("$byte, ")
+        }
+        print("]")
+
+        print("[")
+        for (byte in bytes256) {
+            print("$byte, ")
+        }
+        print("]")
     }
 
-
+    }
 
 }
 
@@ -106,4 +146,5 @@ fun main(args: Array<String>) {
     val hashedString = sha256(inputString)
     println("SHA256 Hash: $hashedString")
     bip39(128, "whatever")
+    bip32("123")
 }
