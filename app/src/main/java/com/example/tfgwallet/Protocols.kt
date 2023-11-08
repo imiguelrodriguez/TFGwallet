@@ -12,6 +12,7 @@ import java.security.spec.KeySpec
 import javax.crypto.SecretKeyFactory
 import javax.crypto.spec.PBEKeySpec
 import kotlin.experimental.and
+import kotlin.math.pow
 
 
 class Protocols {
@@ -28,6 +29,9 @@ class Protocols {
             return stringBuilder.toString()
         }
 
+        fun hmacSha256() {
+
+        }
 
         fun bip39(size: Int, password: String) : Pair<String, ByteArray> {
 
@@ -74,7 +78,7 @@ class Protocols {
 
             // create seed using PBKDF2
 
-            val salt = mnemonic + password // Tu salt aquí
+            val salt = mnemonic + password // salt aquí
             val iterations = 2048
             val keyLength = 64 * 8 // 64 bytes, 512 bits
 
@@ -87,8 +91,6 @@ class Protocols {
             println("PBKDF2 generated key: $hexKey")
 
             return Pair(mnemonic, key)
-
-
     }
         private fun readFile(fileName: String) : List<String> {
             val file = File(fileName)
@@ -102,14 +104,36 @@ class Protocols {
 
         }
 
+        /**
+         * This function converts an integer to the
+         * corresponding ByteArray.
+         *
+         * @param int the "size"-byte integer being serialized
+         * @param size the dimension of the ByteArray
+         * @return the resulting ByteArray
+         */
         fun getBytesFromInt(int: Int, size: Int) : ByteArray {
             return ByteBuffer.allocate(size).putInt(int).array()
         }
 
+        /**
+         * This function performs the serialization of
+         * a 32-bit integer into a 4-byte array.
+         *
+         * @param i the 32-bit integer being serialized
+         * @return the resulting 4-byte size ByteArray
+         */
         fun ser32(i: Int) : ByteArray {
             return getBytesFromInt(i, 4)
         }
 
+        /**
+         * This function performs the serialization of
+         * a 256-bit integer into a 32-byte array.
+         *
+         * @param p the 256-bit integer being serialized
+         * @return the resulting 32-byte size ByteArray
+         */
         fun ser256(p: Int): ByteArray {
             return getBytesFromInt(p, 32)
         }
@@ -120,6 +144,17 @@ class Protocols {
 
         fun parse256(p: ByteArray): Int {
             return ByteBuffer.wrap(p).int
+        }
+
+        fun CKDpriv(SKpar: String, cpar: String, i: Int) : Pair<String, String>? {
+            var i = i
+            val threshold : Int = 2.0.pow(31).toInt()
+            while (i < threshold) {
+                i += threshold
+            }
+            // i >= 2^31, that is, a hardened child
+            // var capitalI = sha256()
+            return null
         }
 
         val bytes32 = ser32(384)
@@ -137,6 +172,20 @@ class Protocols {
         println("]")
 
         println("Original number is ${parse256(bytes256)}")
+
+        // Start derivaton protocol
+        /*
+        1. Generate a seed byte sequence S of a chosen length (between 128 and 512
+        bits; 256 bits is advised) from a pseudo-random generator. On these work,
+        we use the seed we obtain from the BIP-39 protocol, explained in Section
+        3.3.1.
+        2. Calculate I = HMAC − SHA512(Key = ”Bitcoinseed”, Data = S)
+        3. Split I into two 32-byte sequences, IL and IR.
+        4. Use parse256(IL) as master secret key, and IR as master chain code (in
+        case parse256(IL) is 0 or parse256(IL) ≥ n, the master key is invalid).
+
+         */
+
     }
 
     }
