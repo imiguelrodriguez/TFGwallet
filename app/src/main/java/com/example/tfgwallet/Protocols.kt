@@ -9,8 +9,10 @@ import java.nio.ByteBuffer
 import java.security.MessageDigest
 import java.security.SecureRandom
 import java.security.spec.KeySpec
+import javax.crypto.Mac
 import javax.crypto.SecretKeyFactory
 import javax.crypto.spec.PBEKeySpec
+import javax.crypto.spec.SecretKeySpec
 import kotlin.experimental.and
 import kotlin.math.pow
 
@@ -18,6 +20,13 @@ import kotlin.math.pow
 class Protocols {
 
     companion object {
+
+        /**
+         * This function performs the SHA256 hash function.
+         *
+         * @param input a String with the original text
+         * @return the resulting hashed String
+         */
         fun sha256(input: String): String {
             val messageDigest = MessageDigest.getInstance("SHA-256")
             val bytes = messageDigest.digest(input.toByteArray())
@@ -29,16 +38,38 @@ class Protocols {
             return stringBuilder.toString()
         }
 
-        fun hmacSha256() {
-
+        fun hmacSha256(key: ByteArray, data: ByteArray): ByteArray? {
+            // https://itneko.com/kotlin-php-hmac-sha256/
+            val hmacSHA256 = Mac.getInstance("HmacSHA256")
+            val secretKey = SecretKeySpec(key, "HmacSHA256")
+            hmacSHA256.init(secretKey)
+            return hmacSHA256.doFinal(data)
         }
 
+        /**
+         * This function performs the BIP39 protocol, which allows
+         * for creating deterministic wallets. Based on a password
+         * and the desired size for the key, it creates a mnemonic
+         * phrase in English and the seed for key creation in other
+         * protocols such as BIP32.
+         *
+         * @param size the dimension of the key in bits (value should be between 128 and 256 bits,
+         * if not default size will be 128 bits)
+         * @param password used for seed generation
+         * @return a Pair with the mnemonics phrase and the seed (Pair<String, ByteArray>)
+         */
         fun bip39(size: Int, password: String) : Pair<String, ByteArray> {
+            // first check that size is within the boundaries
+            if (size < 128 || size > 256) {
+                var size = 128
+            }
 
             // generate random sequence (entropy) between 128 to 256 bits
-            // first check that size is within the boundaries
             val secureRandom = SecureRandom()
-            var entropy = BigInteger(size, secureRandom).toString(16) // fix when the first char is 0
+            var entropy = BigInteger(size, secureRandom).toString(16)
+
+            // if the first char is 0 size will be smaller than needed, thus add first 0 in String
+            if (entropy.length < (size / 4)) entropy = "0$entropy"
             println("Entropy length ${entropy.length}")
             println(entropy)
             var checksum: String = sha256(entropy)
@@ -77,26 +108,30 @@ class Protocols {
             // convert to mnemonic words based on https://github.com/bitcoin/bips/blob/master/bip-0039/english.txt file
 
             // create seed using PBKDF2
-
-            val salt = mnemonic + password // salt aquí
+            val salt = mnemonic + password
             val iterations = 2048
             val keyLength = 64 * 8 // 64 bytes, 512 bits
 
             val keySpec: KeySpec = PBEKeySpec(password.toCharArray(), salt.toByteArray(), iterations, keyLength)
             val factory: SecretKeyFactory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA512")
             var key = factory.generateSecret(keySpec).encoded
-
             val hexKey = key.joinToString("") { "%02x".format(it) }
-
             println("PBKDF2 generated key: $hexKey")
 
             return Pair(mnemonic, key)
     }
+
+        /**
+         * This function reads all the lines in a file
+         * and returns them in a list.
+         *
+         * @param fileName a String with the name of the file (or path)
+         * @return a list with the file lines
+         */
         private fun readFile(fileName: String) : List<String> {
             val file = File(fileName)
             return file.readLines()
         }
-
 
 
     fun bip32(seed: String) {
@@ -146,14 +181,17 @@ class Protocols {
             return ByteBuffer.wrap(p).int
         }
 
-        fun CKDpriv(SKpar: String, cpar: String, i: Int) : Pair<String, String>? {
+        fun CKDpriv(SKpar: Int, cpar: String, i: Int) : Pair<String, String>? {
             var i = i
             val threshold : Int = 2.0.pow(31).toInt()
             while (i < threshold) {
                 i += threshold
             }
             // i >= 2^31, that is, a hardened child
-            // var capitalI = sha256()
+            var data = ByteArray(0x00) + ser256(SKpar) + ser32(i) // not sure about this
+            var capitalI = hmacSha256(cpar.toByteArray(), data)
+            var left = capitalI?.copyOfRange(0, 31)
+            var right = capitalI?.copyOfRange(31, 63)
             return null
         }
 
