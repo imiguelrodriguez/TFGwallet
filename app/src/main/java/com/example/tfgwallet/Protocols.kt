@@ -60,6 +60,7 @@ class Protocols {
          */
         fun bip39(size: Int, password: String) : Pair<String, ByteArray> {
             // first check that size is within the boundaries
+            // does it have to be a multiple of 2?
             if (size < 128 || size > 256) {
                 var size = 128
             }
@@ -70,14 +71,17 @@ class Protocols {
 
             // if the first char is 0 size will be smaller than needed, thus add first 0 in String
             if (entropy.length < (size / 4)) entropy = "0$entropy"
-            println("Entropy length ${entropy.length}")
+            println("Entropy length ${entropy.length} (hex), ${entropy.length * 4} (binary)")
             println(entropy)
             var checksum: String = sha256(entropy)
+            println("Checksum length ${checksum.length} (hex), ${checksum.length * 4} (binary)")
             println(checksum)
-            // only keep first size/32 bits and concatenate at the end of the initial entropy
-            println("Char to drop ${checksum.length - (size / 32)}")
+            /* only keep first size/32 bits and concatenate at the end of the initial entropy
+               take into account that this is HEXADECIMAL STRING, thus size is not in bits, but
+               rather each digit representing 4 bits */
+            println("Char to drop ${checksum.length * 4 - (size / 32)}")
             println(checksum.length)
-            var modChecksum: String = checksum.dropLast(checksum.length - (size / 32))
+            var modChecksum: String = checksum.dropLast(checksum.length - (entropy.length/ 32))
             println(modChecksum)
             entropy += modChecksum
             println(entropy)
