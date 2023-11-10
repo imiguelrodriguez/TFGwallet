@@ -1,5 +1,4 @@
 package com.example.tfgwallet
-import android.graphics.Point
 import com.example.tfgwallet.Protocols.Companion.bip32
 import com.example.tfgwallet.Protocols.Companion.bip39
 import com.example.tfgwallet.Protocols.Companion.sha256
@@ -13,11 +12,8 @@ import javax.crypto.Mac
 import javax.crypto.SecretKeyFactory
 import javax.crypto.spec.PBEKeySpec
 import javax.crypto.spec.SecretKeySpec
-import kotlin.experimental.and
-import kotlin.math.pow
 import org.bitcoinj.core.ECKey
-import org.bitcoinj.core.Sha256Hash
-import java.security.spec.ECPoint
+import kotlin.math.pow
 
 class Protocols {
 
@@ -40,12 +36,11 @@ class Protocols {
             return stringBuilder.toString()
         }
 
-        fun hmacSha256(key: ByteArray, data: ByteArray): ByteArray? {
-            // https://itneko.com/kotlin-php-hmac-sha256/
-            val hmacSHA256 = Mac.getInstance("HmacSHA256")
-            val secretKey = SecretKeySpec(key, "HmacSHA256")
-            hmacSHA256.init(secretKey)
-            return hmacSHA256.doFinal(data)
+        fun hmacSha512(key: ByteArray, data: ByteArray): ByteArray {
+            val hmacSHA512 = Mac.getInstance("HmacSHA512")
+            val secretKey = SecretKeySpec(key, "HmacSHA512")
+            hmacSHA512.init(secretKey)
+            return hmacSHA512.doFinal(data)
         }
 
         /**
@@ -131,7 +126,7 @@ class Protocols {
             println("PBKDF2 generated key: $hexKey")
 
             return Pair(mnemonic, key)
-    }
+        }
 
         /**
          * This function reads all the lines in a file
@@ -146,122 +141,129 @@ class Protocols {
         }
 
 
-    fun bip32(seed: String) {
+        fun bip32(seed: String) {
 
-        /**
-         * This function performs the multiplication of the integer i with the
-         * secp256k1 base point (elliptic curve y^2 = x^3 + 7 (mod p)) and returns
-         * the (x,y) resulting coordinate pair.
-         *
-         * @param p the integer being multiplied
-         * @return the resulting (x,y) coordinate (point)
-         */
-        fun point(p: BigInteger): org.bouncycastle.math.ec.ECPoint {
-            val basePoint : org.bouncycastle.math.ec.ECPoint = ECKey.CURVE.g
-            return basePoint.multiply(p)
-        }
-
-        /**
-         * This function performs the serialization of
-         * a 32-bit integer into a 4-byte array.
-         *
-         * @param i the 32-bit integer being serialized
-         * @return the resulting 4-byte size ByteArray
-         */
-        fun ser32(i: Int) : ByteArray {
-            return ByteBuffer.allocate(4).putInt(i).array()
-        }
-
-        /**
-         * This function performs the serialization of
-         * a 256-bit integer into a 32-byte array.
-         *
-         * @param p the 256-bit integer being serialized
-         * @return the resulting 32-byte size ByteArray
-         */
-        fun ser256(p: BigInteger): ByteArray {
-            val byteArray: ByteArray = p.toByteArray()
-            // if the number does not take the whole 32-byte array, stuff first positions with 0
-            if (byteArray.size < 32) {
-                val remainingPos: Int = 32 - byteArray.size
-                val stuffArray = ByteArray(32)
-                System.arraycopy(byteArray, 0, stuffArray, remainingPos, byteArray.size)
-                return stuffArray
+            /**
+             * This function performs the multiplication of the integer i with the
+             * secp256k1 base point (elliptic curve y^2 = x^3 + 7 (mod p)) and returns
+             * the (x,y) resulting coordinate pair.
+             *
+             * @param p the integer being multiplied
+             * @return the resulting (x,y) coordinate (point)
+             */
+            fun point(p: BigInteger): org.bouncycastle.math.ec.ECPoint {
+                val basePoint : org.bouncycastle.math.ec.ECPoint = ECKey.CURVE.g
+                return basePoint.multiply(p)
             }
-            return byteArray
-        }
 
-        /**
-         * This function performs the serialization of
-         * a (x,y) point into the compressed SEC1 form.
-         *
-         * @param P the (x,y) ECPoint
-         * @return the resulting SEC1 compressed ByteArray
-         */
-        fun serP(P: org.bouncycastle.math.ec.ECPoint): ByteArray {
-            val serArray: ByteArray = ser256(P.xCoord.toBigInteger())
-            val array = ByteArray(serArray.size + 1)
-            System.arraycopy(serArray, 0, array, 1, serArray.size)
-            array[0] = if (P.yCoord.toBigInteger() % (BigInteger("2")) == BigInteger.ZERO) 0x02.toByte() else 0x03.toByte() // header byte
-            return array
-        }
-
-        /**
-         * This function converts a 32-byte array to a BigInteger
-         *
-         * @param p the 32-byte array
-         * @return the resulting BigInteger
-         */
-        fun parse256(p: ByteArray): BigInteger {
-            return BigInteger(p)
-        }
-/*
-        fun CKDpriv(SKpar: Int, cpar: String, i: Int) : Pair<String, String>? {
-            var i = i
-            val threshold : Int = 2.0.pow(31).toInt()
-            while (i < threshold) {
-                i += threshold
+            /**
+             * This function performs the serialization of
+             * a 32-bit integer into a 4-byte array.
+             *
+             * @param i the 32-bit integer being serialized
+             * @return the resulting 4-byte size ByteArray
+             */
+            fun ser32(i: Int) : ByteArray {
+                return ByteBuffer.allocate(4).putInt(i).array()
             }
-            // i >= 2^31, that is, a hardened child
-            var data = ByteArray(0x00) + ser256(SKpar) + ser32(i) // not sure about this
-            var capitalI = hmacSha256(cpar.toByteArray(), data)
-            var left = capitalI?.copyOfRange(0, 31)
-            var right = capitalI?.copyOfRange(31, 63)
-            return null
+
+            /**
+             * This function performs the serialization of
+             * a 256-bit integer into a 32-byte array.
+             *
+             * @param p the 256-bit integer being serialized
+             * @return the resulting 32-byte size ByteArray
+             */
+            fun ser256(p: BigInteger): ByteArray {
+                val byteArray: ByteArray = p.toByteArray()
+                // if the number does not take the whole 32-byte array, stuff first positions with 0
+                if (byteArray.size < 32) {
+                    val remainingPos: Int = 32 - byteArray.size
+                    val stuffArray = ByteArray(32)
+                    System.arraycopy(byteArray, 0, stuffArray, remainingPos, byteArray.size)
+                    return stuffArray
+                }
+                return byteArray
+            }
+
+            /**
+             * This function performs the serialization of
+             * a (x,y) point into the compressed SEC1 form.
+             *
+             * @param P the (x,y) ECPoint
+             * @return the resulting SEC1 compressed ByteArray
+             */
+            fun serP(P: org.bouncycastle.math.ec.ECPoint): ByteArray {
+                val serArray: ByteArray = ser256(P.xCoord.toBigInteger())
+                val array = ByteArray(serArray.size + 1)
+                System.arraycopy(serArray, 0, array, 1, serArray.size)
+                array[0] = if (P.yCoord.toBigInteger() % (BigInteger("2")) == BigInteger.ZERO) 0x02.toByte() else 0x03.toByte() // header byte
+                return array
+            }
+
+            /**
+             * This function converts a 32-byte array to a BigInteger
+             *
+             * @param p the 32-byte array
+             * @return the resulting BigInteger
+             */
+            fun parse256(p: ByteArray): BigInteger {
+                return BigInteger(p)
+            }
+
+            fun CKDpriv(SKpar: BigInteger, cpar: String, i: Int) : Pair<BigInteger, BigInteger> {
+                var i = i
+                val threshold : Int = 2.0.pow(31).toInt()
+                while (i < threshold) {
+                    i += threshold
+                }
+                // i >= 2^31, that is, a hardened child
+                var data: ByteArray = "0x00".toByteArray() + ser256(SKpar) + ser32(i) // not sure about this
+                var capitalI: ByteArray = hmacSha512(cpar.toByteArray(), data)
+                var left = capitalI.copyOfRange(0, 31)
+                var right = capitalI.copyOfRange(31, 63)
+
+                var validKey: Boolean = parse256(left) >= i.toBigInteger()
+                var SKi: BigInteger = parse256(left) + SKpar % i.toBigInteger() // it's mod(n) but what is n here?
+                validKey = validKey || SKi == BigInteger.ZERO
+                //if (!validKey)
+                return Pair(SKi, BigInteger(right))
+            }
+
+
+
+            val bytes32 = ser32(123109823)
+            val bytes256 = ser256(BigInteger("123109823"))
+            print("[")
+            for (byte in bytes32) {
+                print("$byte, ")
+            }
+            println("]")
+
+            print("[")
+            for (byte in bytes256) {
+                print("$byte, ")
+            }
+            println("]")
+
+            println("Original number is ${parse256(bytes256)}")
+            val point = point(BigInteger("123456789123456789"))
+            println("Point: (${point.xCoord}, ${point.yCoord})")
+            println("SerP: ${serP(point)}")
+            // Start derivation protocol
+            /*
+            1. Generate a seed byte sequence S of a chosen length (between 128 and 512
+            bits; 256 bits is advised) from a pseudo-random generator. On these work,
+            we use the seed we obtain from the BIP-39 protocol, explained in Section
+            3.3.1.
+            2. Calculate I = HMAC − SHA512(Key = ”Bitcoinseed”, Data = S)
+            3. Split I into two 32-byte sequences, IL and IR.
+            4. Use parse256(IL) as master secret key, and IR as master chain code (in
+            case parse256(IL) is 0 or parse256(IL) ≥ n, the master key is invalid).
+
+             */
+
         }
-        */
-
-
-        val bytes32 = ser32(123109823)
-        val bytes256 = ser256(BigInteger("123109823"))
-        print("[")
-        for (byte in bytes32) {
-            print("$byte, ")
-        }
-        println("]")
-
-        print("[")
-        for (byte in bytes256) {
-            print("$byte, ")
-        }
-        println("]")
-
-        println("Original number is ${parse256(bytes256)}")
-
-        // Start derivaton protocol
-        /*
-        1. Generate a seed byte sequence S of a chosen length (between 128 and 512
-        bits; 256 bits is advised) from a pseudo-random generator. On these work,
-        we use the seed we obtain from the BIP-39 protocol, explained in Section
-        3.3.1.
-        2. Calculate I = HMAC − SHA512(Key = ”Bitcoinseed”, Data = S)
-        3. Split I into two 32-byte sequences, IL and IR.
-        4. Use parse256(IL) as master secret key, and IR as master chain code (in
-        case parse256(IL) is 0 or parse256(IL) ≥ n, the master key is invalid).
-
-         */
-
-    }
 
     }
 
