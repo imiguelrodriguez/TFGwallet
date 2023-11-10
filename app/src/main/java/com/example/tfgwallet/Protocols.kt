@@ -15,7 +15,9 @@ import javax.crypto.spec.PBEKeySpec
 import javax.crypto.spec.SecretKeySpec
 import kotlin.experimental.and
 import kotlin.math.pow
-
+import org.bitcoinj.core.ECKey
+import org.bitcoinj.core.Sha256Hash
+import java.security.spec.ECPoint
 
 class Protocols {
 
@@ -145,8 +147,9 @@ class Protocols {
 
 
     fun bip32(seed: String) {
-        fun point(p: Point) {
-
+        fun point(p: BigInteger): org.bouncycastle.math.ec.ECPoint {
+            val basePoint : org.bouncycastle.math.ec.ECPoint = ECKey.CURVE.g
+            return basePoint.multiply(p)
         }
 
         /**
