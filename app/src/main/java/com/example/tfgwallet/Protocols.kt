@@ -206,8 +206,14 @@ class Protocols {
             return array
         }
 
-        fun parse256(p: ByteArray): Int {
-            return ByteBuffer.wrap(p).int
+        /**
+         * This function converts a 32-byte array to a BigInteger
+         *
+         * @param p the 32-byte array
+         * @return the resulting BigInteger
+         */
+        fun parse256(p: ByteArray): BigInteger {
+            return BigInteger(p)
         }
 /*
         fun CKDpriv(SKpar: Int, cpar: String, i: Int) : Pair<String, String>? {
