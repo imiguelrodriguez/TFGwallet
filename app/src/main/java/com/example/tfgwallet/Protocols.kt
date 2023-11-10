@@ -153,18 +153,6 @@ class Protocols {
         }
 
         /**
-         * This function converts an integer to the
-         * corresponding ByteArray.
-         *
-         * @param int the "size"-byte integer being serialized
-         * @param size the dimension of the ByteArray
-         * @return the resulting ByteArray
-         */
-        fun getBytesFromInt(int: Int, size: Int) : ByteArray {
-            return ByteBuffer.allocate(size).putInt(int).array()
-        }
-
-        /**
          * This function performs the serialization of
          * a 32-bit integer into a 4-byte array.
          *
@@ -172,7 +160,7 @@ class Protocols {
          * @return the resulting 4-byte size ByteArray
          */
         fun ser32(i: Int) : ByteArray {
-            return getBytesFromInt(i, 4)
+            return ByteBuffer.allocate(4).putInt(i).array()
         }
 
         /**
@@ -182,18 +170,29 @@ class Protocols {
          * @param p the 256-bit integer being serialized
          * @return the resulting 32-byte size ByteArray
          */
-        fun ser256(p: Int): ByteArray {
-            return getBytesFromInt(p, 32)
+        fun ser256(p: BigInteger): ByteArray {
+            val byteArray: ByteArray = p.toByteArray()
+            // if the number does not take the whole 32-byte array, stuff first positions with 0
+            if (byteArray.size < 32) {
+                val remainingPos: Int = 32 - byteArray.size
+                val stuffArray = ByteArray(32)
+                System.arraycopy(byteArray, 0, stuffArray, remainingPos, byteArray.size)
+                return stuffArray
+            }
+            return byteArray
         }
 
-        fun serP(P: Point) {
-
+        fun serP(P: org.bouncycastle.math.ec.ECPoint): ByteArray {
+            // https://www.secg.org/sec1-v2.pdf
+            var x: BigInteger = P.xCoord.toBigInteger()
+            var y: BigInteger = P.yCoord.toBigInteger()
+            return ByteArray(1)
         }
 
         fun parse256(p: ByteArray): Int {
             return ByteBuffer.wrap(p).int
         }
-
+/*
         fun CKDpriv(SKpar: Int, cpar: String, i: Int) : Pair<String, String>? {
             var i = i
             val threshold : Int = 2.0.pow(31).toInt()
@@ -207,9 +206,11 @@ class Protocols {
             var right = capitalI?.copyOfRange(31, 63)
             return null
         }
+        */
 
-        val bytes32 = ser32(384)
-        val bytes256 = ser256(123109823)
+
+        val bytes32 = ser32(123109823)
+        val bytes256 = ser256(BigInteger("123109823"))
         print("[")
         for (byte in bytes32) {
             print("$byte, ")
