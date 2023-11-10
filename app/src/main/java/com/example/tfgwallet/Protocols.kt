@@ -147,6 +147,15 @@ class Protocols {
 
 
     fun bip32(seed: String) {
+
+        /**
+         * This function performs the multiplication of the integer i with the
+         * secp256k1 base point (elliptic curve y^2 = x^3 + 7 (mod p)) and returns
+         * the (x,y) resulting coordinate pair.
+         *
+         * @param p the integer being multiplied
+         * @return the resulting (x,y) coordinate (point)
+         */
         fun point(p: BigInteger): org.bouncycastle.math.ec.ECPoint {
             val basePoint : org.bouncycastle.math.ec.ECPoint = ECKey.CURVE.g
             return basePoint.multiply(p)
@@ -182,11 +191,19 @@ class Protocols {
             return byteArray
         }
 
+        /**
+         * This function performs the serialization of
+         * a (x,y) point into the compressed SEC1 form.
+         *
+         * @param P the (x,y) ECPoint
+         * @return the resulting SEC1 compressed ByteArray
+         */
         fun serP(P: org.bouncycastle.math.ec.ECPoint): ByteArray {
-            // https://www.secg.org/sec1-v2.pdf
-            var x: BigInteger = P.xCoord.toBigInteger()
-            var y: BigInteger = P.yCoord.toBigInteger()
-            return ByteArray(1)
+            val serArray: ByteArray = ser256(P.xCoord.toBigInteger())
+            val array = ByteArray(serArray.size + 1)
+            System.arraycopy(serArray, 0, array, 1, serArray.size)
+            array[0] = if (P.yCoord.toBigInteger() % (BigInteger("2")) == BigInteger.ZERO) 0x02.toByte() else 0x03.toByte() // header byte
+            return array
         }
 
         fun parse256(p: ByteArray): Int {
