@@ -1,7 +1,6 @@
-package com.example.tfgwallet
-import com.example.tfgwallet.Protocols.Companion.bip32
-import com.example.tfgwallet.Protocols.Companion.bip39
-import com.example.tfgwallet.Protocols.Companion.sha256
+package com.example.tfgwallet.model
+import com.example.tfgwallet.model.Protocols.Companion.bip39
+import com.example.tfgwallet.model.Protocols.Companion.sha256
 import java.io.File
 import java.math.BigInteger
 import java.nio.ByteBuffer
@@ -141,7 +140,7 @@ class Protocols {
         }
 
 
-        fun bip32(seed: String) {
+        fun bip32(seed: ByteArray) {
 
             /**
              * This function performs the multiplication of the integer i with the
@@ -211,9 +210,9 @@ class Protocols {
                 return BigInteger(p)
             }
 
-            fun CKDpriv(SKpar: BigInteger, cpar: String, i: Int) : Pair<BigInteger, BigInteger> {
+            fun CKDpriv(SKpar: BigInteger, cpar: BigInteger, i: Int) : Pair<BigInteger, BigInteger> {
                 var i = i
-                val threshold : Int = 2.0.pow(31).toInt()
+                val threshold: Int = 2.0.pow(31).toInt()
                 while (i < threshold) {
                     i += threshold
                 }
@@ -224,45 +223,22 @@ class Protocols {
                 var right = capitalI.copyOfRange(31, 63)
 
                 var validKey: Boolean = parse256(left) >= i.toBigInteger()
-                var SKi: BigInteger = parse256(left) + SKpar % i.toBigInteger() // it's mod(n) but what is n here?
+                var SKi: BigInteger = parse256(left) + SKpar % 256.toBigInteger() // mod(n), being n key length
                 validKey = validKey || SKi == BigInteger.ZERO
                 //if (!validKey)
                 return Pair(SKi, BigInteger(right))
             }
 
 
-
-            val bytes32 = ser32(123109823)
-            val bytes256 = ser256(BigInteger("123109823"))
-            print("[")
-            for (byte in bytes32) {
-                print("$byte, ")
-            }
-            println("]")
-
-            print("[")
-            for (byte in bytes256) {
-                print("$byte, ")
-            }
-            println("]")
-
-            println("Original number is ${parse256(bytes256)}")
-            val point = point(BigInteger("123456789123456789"))
-            println("Point: (${point.xCoord}, ${point.yCoord})")
-            println("SerP: ${serP(point)}")
-            // Start derivation protocol
-            /*
-            1. Generate a seed byte sequence S of a chosen length (between 128 and 512
-            bits; 256 bits is advised) from a pseudo-random generator. On these work,
-            we use the seed we obtain from the BIP-39 protocol, explained in Section
-            3.3.1.
-            2. Calculate I = HMAC − SHA512(Key = ”Bitcoinseed”, Data = S)
-            3. Split I into two 32-byte sequences, IL and IR.
-            4. Use parse256(IL) as master secret key, and IR as master chain code (in
-            case parse256(IL) is 0 or parse256(IL) ≥ n, the master key is invalid).
-
-             */
-
+            // MASTER KEY GENERATION
+            var seq = bip39(256, "password")
+            // possibly include this code into a function since it is repeated
+            var capitalI = hmacSha512(seq.first.toByteArray(), seq.second)
+            var left = capitalI.copyOfRange(0, 31)
+            var right = capitalI.copyOfRange(31, 63)
+            var masterKey = parse256(left)
+            var masterChain = parse256(right)
+            CKDpriv(masterKey, masterChain, 1) // not sure which value to initialize i
         }
 
     }
@@ -274,5 +250,5 @@ fun main(args: Array<String>) {
     val hashedString = sha256(inputString)
     println("SHA256 Hash: $hashedString")
     bip39(128, "whatever")
-    bip32("123")
+
 }

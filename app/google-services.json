@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "784143474839",
+    "project_id": "tfgwallet",
+    "storage_bucket": "tfgwallet.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:784143474839:android:c593e4d953ff30feee89d2",
+        "android_client_info": {
+          "package_name": "com.example.tfgwallet"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBXvXxQ_Zvt58Wj2rr03Wf_yRrekGBbV1Q"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
