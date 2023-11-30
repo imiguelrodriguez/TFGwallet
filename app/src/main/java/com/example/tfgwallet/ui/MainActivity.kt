@@ -25,19 +25,29 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setup(binding: ActivityLoginBinding) {
-        title = "Log in"
 
-        binding.loginButton.setOnClickListener {
+        binding.signupButton.setOnClickListener {
             if (binding.username.text.isNotEmpty() && binding.password.text.isNotEmpty()) {
                 FirebaseAuth.getInstance().createUserWithEmailAndPassword(binding.username.text.toString(),
                     binding.password.text.toString()).addOnCompleteListener {
                         if (it.isSuccessful) {
-                            showAlert("Success!","User ${it.result.user} has been authenticated successfully.")
+                            showAlert("Success!","User ${it.result.user?.email} has been registered successfully.")
                         } else {
-                            showAlert("Error","An error has occurred while trying to authenticate the user.")
+                            showAlert("Error","An error has occurred while trying to sign up.")
                         }
                 }
             }
+        }
+        binding.loginButton.setOnClickListener {
+            FirebaseAuth.getInstance().signInWithEmailAndPassword(binding.username.text.toString(), binding.password.text.toString())
+                .addOnCompleteListener {
+                    if (it.isSuccessful) {
+                        showAlert("Correct credentials", "Welcome back ${binding.username.text}!")
+
+                    } else {
+                        showAlert("Error", "Problem signing in for user ${binding.username.text}")
+                    }
+                }
         }
     }
 
