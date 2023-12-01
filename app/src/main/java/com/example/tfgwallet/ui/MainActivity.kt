@@ -1,15 +1,13 @@
 package com.example.tfgwallet.ui
 
-import android.content.ContentValues.TAG
+import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.util.Log
-import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import com.example.tfgwallet.databinding.ActivityLoginBinding
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.auth
+
 
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityLoginBinding
@@ -30,11 +28,11 @@ class MainActivity : AppCompatActivity() {
             if (binding.username.text.isNotEmpty() && binding.password.text.isNotEmpty()) {
                 FirebaseAuth.getInstance().createUserWithEmailAndPassword(binding.username.text.toString(),
                     binding.password.text.toString()).addOnCompleteListener {
-                        if (it.isSuccessful) {
-                            showAlert("Success!","User ${it.result.user?.email} has been registered successfully.")
-                        } else {
-                            showAlert("Error","An error has occurred while trying to sign up.")
-                        }
+                    if (it.isSuccessful) {
+                        showAlert("Success!","User ${it.result.user?.email} has been registered successfully.")
+                    } else {
+                        showAlert("Error","An error has occurred while trying to sign up.")
+                    }
                 }
             }
         }
@@ -42,8 +40,10 @@ class MainActivity : AppCompatActivity() {
             FirebaseAuth.getInstance().signInWithEmailAndPassword(binding.username.text.toString(), binding.password.text.toString())
                 .addOnCompleteListener {
                     if (it.isSuccessful) {
-                        showAlert("Correct credentials", "Welcome back ${binding.username.text}!")
-
+                        val homeIntent = Intent(this, HomeActivity::class.java).apply {
+                            putExtra("email", it.result.user.toString())
+                        }
+                        startActivity(homeIntent)
                     } else {
                         showAlert("Error", "Problem signing in for user ${binding.username.text}")
                     }
