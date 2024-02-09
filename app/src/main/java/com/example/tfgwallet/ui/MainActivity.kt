@@ -3,10 +3,12 @@ package com.example.tfgwallet.ui
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.view.View
 import androidx.appcompat.app.AlertDialog
 import com.example.tfgwallet.databinding.ActivityLoginBinding
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
+import com.hbb20.CountryCodePicker
 
 
 class MainActivity : AppCompatActivity() {
@@ -17,6 +19,10 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityLoginBinding.inflate(layoutInflater)
         val view = binding.root
         setContentView(view)
+        val phoneCodePicker = binding.phoneLayout
+        binding.checkBox.setOnCheckedChangeListener { _, isChecked ->
+            phoneCodePicker.visibility = if (isChecked) View.VISIBLE else View.GONE
+        }
         FirebaseApp.initializeApp(this)
         setup(binding)
 

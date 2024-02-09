@@ -1,4 +1,5 @@
 package com.example.tfgwallet.model
+import com.example.tfgwallet.model.Protocols.Companion.bip32
 import com.example.tfgwallet.model.Protocols.Companion.bip39
 import com.example.tfgwallet.model.Protocols.Companion.sha256
 import java.io.File
@@ -12,7 +13,10 @@ import javax.crypto.SecretKeyFactory
 import javax.crypto.spec.PBEKeySpec
 import javax.crypto.spec.SecretKeySpec
 import org.bitcoinj.core.ECKey
+import kotlin.experimental.and
 import kotlin.math.pow
+import kotlin.random.Random
+import kotlin.random.nextUInt
 
 class Protocols {
 
@@ -42,6 +46,20 @@ class Protocols {
             return hmacSHA512.doFinal(data)
         }
 
+        fun UByteArrayToBigInteger(array: UByteArray): BigInteger {
+            return array.fold(BigInteger.ZERO) { acc, byte ->
+                acc.shl(8).or(BigInteger(byte.toString()))
+            }
+        }
+
+        fun toUByteArray(signedArray: ByteArray): UByteArray {
+            return UByteArray(signedArray.size) { i ->
+                (signedArray[i].toInt() and 0xFF).toUByte()
+            }
+        }
+
+
+
         /**
          * This function performs the BIP39 protocol, which allows
          * for creating deterministic wallets. Based on a password
@@ -57,7 +75,7 @@ class Protocols {
         fun bip39(size: Int, password: String) : Pair<String, ByteArray> {
             // first check that size is within the boundaries
             if (size < 128 || size > 256) {
-                var size = 128
+                var size = 128 // assign default value
             }
 
             // generate random sequence (entropy) between 128 to 256 bits
@@ -139,8 +157,8 @@ class Protocols {
             return file.readLines()
         }
 
-
-        fun bip32(seed: ByteArray) {
+        fun bip32(seed: ByteArray) : Pair<BigInteger, BigInteger> {
+            val threshold: UInt = Int.MAX_VALUE.toUInt() // (2 ^ 31) -
 
             /**
              * This function performs the multiplication of the integer i with the
@@ -162,8 +180,15 @@ class Protocols {
              * @param i the 32-bit integer being serialized
              * @return the resulting 4-byte size ByteArray
              */
-            fun ser32(i: Int) : ByteArray {
-                return ByteBuffer.allocate(4).putInt(i).array()
+            fun ser32(i: UInt) : ByteArray {
+                var mask: UInt = 0xFF000000U
+                var byteArray = ByteArray(4)
+                for (j in 0 until 4) {
+                    val byte = ((i and mask) shr ((3 - j) * 8)).toByte()
+                    byteArray[j] = byte
+                    mask = mask shr 8
+                }
+                return byteArray
             }
 
             /**
@@ -210,35 +235,52 @@ class Protocols {
                 return BigInteger(p)
             }
 
-            fun CKDpriv(SKpar: BigInteger, cpar: BigInteger, i: Int) : Pair<BigInteger, BigInteger> {
-                var i = i
-                val threshold: Int = 2.0.pow(31).toInt()
+            /**
+             * i: UInt
+             */
+            fun CKDpriv(size: Int, SKpar: BigInteger, cpar: BigInteger, i: UInt) : Pair<BigInteger, BigInteger> {
+                var i: UInt = i
                 while (i < threshold) {
                     i += threshold
                 }
-                // i >= 2^31, that is, a hardened child
-                var data: ByteArray = "0x00".toByteArray() + ser256(SKpar) + ser32(i) // not sure about this
-                var capitalI: ByteArray = hmacSha512(cpar.toByteArray(), data)
-                var left = capitalI.copyOfRange(0, 31)
-                var right = capitalI.copyOfRange(31, 63)
+                var SKi: BigInteger = BigInteger.ZERO
+                var chain: BigInteger = BigInteger.ZERO
+                var validKey = false
+                while(!validKey) {
+                    var ser32 = ser32(i)
+                    println(ser32.contentToString())
+                    // i >= 2^31, that is, a hardened child
+                    var data: ByteArray =
+                        byteArrayOf(0x00) + ser256(SKpar) + ser32 // not sure about this
+                    var capitalI: ByteArray = hmacSha512(cpar.toByteArray(), data)
+                    var left = capitalI.copyOfRange(0, 31)
+                    var right = capitalI.copyOfRange(31, 63) // chain code
+                    chain = BigInteger(right)
+                    var SKi: BigInteger =
+                        parse256(left) + SKpar % size.toBigInteger() // mod(n), being n key length
+                    validKey = parse256(left) < size.toBigInteger()
+                    validKey = validKey || SKi != BigInteger.ZERO
+                }
 
-                var validKey: Boolean = parse256(left) >= i.toBigInteger()
-                var SKi: BigInteger = parse256(left) + SKpar % 256.toBigInteger() // mod(n), being n key length
-                validKey = validKey || SKi == BigInteger.ZERO
-                //if (!validKey)
-                return Pair(SKi, BigInteger(right))
+                return Pair(SKi, chain)
             }
 
-
+            var size = 256
             // MASTER KEY GENERATION
-            var seq = bip39(256, "password")
             // possibly include this code into a function since it is repeated
-            var capitalI = hmacSha512(seq.first.toByteArray(), seq.second)
-            var left = capitalI.copyOfRange(0, 31)
-            var right = capitalI.copyOfRange(31, 63)
-            var masterKey = parse256(left)
-            var masterChain = parse256(right)
-            CKDpriv(masterKey, masterChain, 1) // not sure which value to initialize i
+            var valid = false
+            var masterKey = BigInteger.ZERO  // initialization
+            var masterChain = BigInteger.ZERO
+            while(!valid) {
+                var capitalI = hmacSha512("Bitcoinseed".toByteArray(), seed)
+                var left = capitalI.copyOfRange(0, 31)
+                var right = capitalI.copyOfRange(31, 63)
+                masterKey = parse256(left)
+                masterChain = parse256(right)
+                if (masterKey != BigInteger.ZERO || masterKey < size.toBigInteger())
+                    valid = true
+            }
+            return CKDpriv(size, masterKey, masterChain, Random.nextUInt(0u, (2.0.pow(32).toUInt()) - 1u)) // randomly initialize i
         }
 
     }
@@ -249,6 +291,7 @@ fun main(args: Array<String>) {
     val inputString = "Hello, this is a test string for hashing."
     val hashedString = sha256(inputString)
     println("SHA256 Hash: $hashedString")
-    bip39(128, "whatever")
+    val seed = bip39(256, "password")
+    bip32(seed.second)
 
 }
