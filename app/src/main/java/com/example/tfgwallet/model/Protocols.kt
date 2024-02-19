@@ -39,6 +39,13 @@ class Protocols {
             return stringBuilder.toString()
         }
 
+        /**
+         * This function performs the HMAC-SHA512 hash function.
+         *
+         * @param key ByteArray with the secret key
+         * @param data ByteArray with the data to be hashed
+         * @return the resulting hashed ByteArray
+         */
         fun hmacSha512(key: ByteArray, data: ByteArray): ByteArray {
             val hmacSHA512 = Mac.getInstance("HmacSHA512")
             val secretKey = SecretKeySpec(key, "HmacSHA512")
@@ -70,9 +77,9 @@ class Protocols {
          * @param size the dimension of the key in bits (value should be between 128 and 256 bits,
          * if not default size will be 128 bits)
          * @param password used for seed generation
-         * @return a Pair with the mnemonics phrase and the seed (Pair<String, ByteArray>)
+         * @return a Pair with the mnemonics phrase and the seed (Pair<String, UByteArray>)
          */
-        fun bip39(size: Int, password: String) : Pair<String, ByteArray> {
+        fun bip39(size: Int, password: String) : Pair<String, UByteArray> {
             // first check that size is within the boundaries
             if (size < 128 || size > 256) {
                 var size = 128 // assign default value
@@ -138,7 +145,7 @@ class Protocols {
 
             val keySpec: KeySpec = PBEKeySpec(password.toCharArray(), salt.toByteArray(), iterations, keyLength)
             val factory: SecretKeyFactory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA512")
-            var key = factory.generateSecret(keySpec).encoded
+            var key = toUByteArray(factory.generateSecret(keySpec).encoded)
             val hexKey = key.joinToString("") { "%02x".format(it) }
             println("PBKDF2 generated key: $hexKey")
 
@@ -157,8 +164,9 @@ class Protocols {
             return file.readLines()
         }
 
-        fun bip32(seed: ByteArray) : Pair<BigInteger, BigInteger> {
-            val threshold: UInt = Int.MAX_VALUE.toUInt() // (2 ^ 31) -
+
+        fun bip32(seed: UByteArray) : Pair<BigInteger, BigInteger> {
+            val threshold: UInt = Int.MAX_VALUE.toUInt() // (2 ^ 31) - 1
 
             /**
              * This function performs the multiplication of the integer i with the
@@ -175,16 +183,16 @@ class Protocols {
 
             /**
              * This function performs the serialization of
-             * a 32-bit integer into a 4-byte array.
+             * a 32-bit integer into a 4-unsigned byte array.
              *
              * @param i the 32-bit integer being serialized
-             * @return the resulting 4-byte size ByteArray
+             * @return the resulting 4-byte size UByteArray
              */
-            fun ser32(i: UInt) : ByteArray {
+            fun ser32(i: UInt) : UByteArray {
                 var mask: UInt = 0xFF000000U
-                var byteArray = ByteArray(4)
+                var byteArray = UByteArray(4)
                 for (j in 0 until 4) {
-                    val byte = ((i and mask) shr ((3 - j) * 8)).toByte()
+                    val byte = ((i and mask) shr ((3 - j) * 8)).toUByte()
                     byteArray[j] = byte
                     mask = mask shr 8
                 }
@@ -196,18 +204,18 @@ class Protocols {
              * a 256-bit integer into a 32-byte array.
              *
              * @param p the 256-bit integer being serialized
-             * @return the resulting 32-byte size ByteArray
+             * @return the resulting 32-byte size UByteArray
              */
-            fun ser256(p: BigInteger): ByteArray {
+            fun ser256(p: BigInteger): UByteArray {
                 val byteArray: ByteArray = p.toByteArray()
                 // if the number does not take the whole 32-byte array, stuff first positions with 0
                 if (byteArray.size < 32) {
                     val remainingPos: Int = 32 - byteArray.size
                     val stuffArray = ByteArray(32)
                     System.arraycopy(byteArray, 0, stuffArray, remainingPos, byteArray.size)
-                    return stuffArray
+                    return toUByteArray(stuffArray)
                 }
-                return byteArray
+                return toUByteArray(byteArray)
             }
 
             /**
@@ -215,24 +223,24 @@ class Protocols {
              * a (x,y) point into the compressed SEC1 form.
              *
              * @param P the (x,y) ECPoint
-             * @return the resulting SEC1 compressed ByteArray
+             * @return the resulting SEC1 compressed UByteArray
              */
-            fun serP(P: org.bouncycastle.math.ec.ECPoint): ByteArray {
-                val serArray: ByteArray = ser256(P.xCoord.toBigInteger())
-                val array = ByteArray(serArray.size + 1)
+            fun serP(P: org.bouncycastle.math.ec.ECPoint): UByteArray {
+                val serArray: UByteArray = ser256(P.xCoord.toBigInteger())
+                val array = UByteArray(serArray.size + 1)
                 System.arraycopy(serArray, 0, array, 1, serArray.size)
-                array[0] = if (P.yCoord.toBigInteger() % (BigInteger("2")) == BigInteger.ZERO) 0x02.toByte() else 0x03.toByte() // header byte
+                array[0] = if (P.yCoord.toBigInteger() % (BigInteger("2")) == BigInteger.ZERO) 0x02.toUByte() else 0x03.toUByte() // header byte
                 return array
             }
 
             /**
              * This function converts a 32-byte array to a BigInteger
              *
-             * @param p the 32-byte array
+             * @param p the 32-unsigned byte array
              * @return the resulting BigInteger
              */
-            fun parse256(p: ByteArray): BigInteger {
-                return BigInteger(p)
+            fun parse256(p: UByteArray): BigInteger {
+                return UByteArrayToBigInteger(p)
             }
 
             /**
@@ -248,14 +256,13 @@ class Protocols {
                 var validKey = false
                 while(!validKey) {
                     var ser32 = ser32(i)
-                    println(ser32.contentToString())
                     // i >= 2^31, that is, a hardened child
-                    var data: ByteArray =
-                        byteArrayOf(0x00) + ser256(SKpar) + ser32 // not sure about this
-                    var capitalI: ByteArray = hmacSha512(cpar.toByteArray(), data)
+                    var data: UByteArray =
+                        ubyteArrayOf(0x00u) + ser256(SKpar) + ser32 // not sure about this
+                    var capitalI: UByteArray = toUByteArray(hmacSha512(cpar.toByteArray(), data.toByteArray()))
                     var left = capitalI.copyOfRange(0, 31)
                     var right = capitalI.copyOfRange(31, 63) // chain code
-                    chain = BigInteger(right)
+                    chain = UByteArrayToBigInteger(right)
                     var SKi: BigInteger =
                         parse256(left) + SKpar % size.toBigInteger() // mod(n), being n key length
                     validKey = parse256(left) < size.toBigInteger()
@@ -272,7 +279,7 @@ class Protocols {
             var masterKey = BigInteger.ZERO  // initialization
             var masterChain = BigInteger.ZERO
             while(!valid) {
-                var capitalI = hmacSha512("Bitcoinseed".toByteArray(), seed)
+                var capitalI = toUByteArray(hmacSha512("Bitcoinseed".toByteArray(), seed.toByteArray()))
                 var left = capitalI.copyOfRange(0, 31)
                 var right = capitalI.copyOfRange(31, 63)
                 masterKey = parse256(left)
