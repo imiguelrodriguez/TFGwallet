@@ -1,17 +1,10 @@
 package com.example.tfgwallet.control
 
-import android.security.keystore.KeyGenParameterSpec
-import android.security.keystore.KeyProperties
-import java.io.ByteArrayOutputStream
-import java.io.ObjectOutputStream
-import java.security.KeyStore
-import javax.crypto.Cipher
-import javax.crypto.CipherOutputStream
-import javax.crypto.KeyGenerator
-import javax.crypto.spec.GCMParameterSpec
+import com.example.tfgwallet.model.Protocols
 
 class Control {
-/*
+    companion object {
+        /*
     val keyGenerator = KeyGenerator
         .getInstance(KeyProperties.KEY_ALGORITHM_AES, "AndroidKeyStore")
 
@@ -50,4 +43,14 @@ class Control {
     cipher.init(Cipher.DECRYPT_MODE, sKey, spec)
 
     val decodedData = cipher.doFinal(encryptedData)*/
+
+        fun executeBIP32(seed: UByteArray) {
+            var bip32 = Protocols.Companion.Bip32(seed)
+        }
+
+        fun executeBIP39(size: Int, password: String): Pair<String, UByteArray> {
+            var bip39 = Protocols.Companion.Bip39(size, password)
+            return bip39.getSeed()
+        }
+    }
 }

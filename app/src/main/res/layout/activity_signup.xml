@@ -120,13 +120,13 @@
                 app:layout_constraintTop_toBottomOf="@+id/phoneLayout">
 
                 <com.google.android.material.button.MaterialButton
-                    android:id="@+id/recoverButton"
+                    android:id="@+id/signUpButton"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginLeft="16dp"
                     android:layout_marginRight="16dp"
                     android:backgroundTint="@color/crypticPurple"
-                    android:text="RECOVER PASSWORD"
+                    android:text="SIGN UP"
                     android:textAlignment="center"
                     android:textColor="@color/binaryWhite"
                     android:textSize="22sp"
@@ -140,14 +140,14 @@
     </com.google.android.material.card.MaterialCardView>
 
     <TextView
-        android:id="@+id/forgottenTitle"
+        android:id="@+id/signUpTitle"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:layout_marginStart="32dp"
         android:layout_marginTop="32dp"
         android:layout_marginEnd="32dp"
         android:layout_marginBottom="32dp"
-        android:text="FORGOTTEN PASSWORD PAGE"
+        android:text="SIGN UP PAGE"
         android:textAlignment="center"
         android:textSize="24sp"
         android:textStyle="bold"

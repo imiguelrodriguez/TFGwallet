@@ -1,0 +1,54 @@
+package com.example.tfgwallet.ui
+
+import android.content.Intent
+import androidx.appcompat.app.AppCompatActivity
+import android.os.Bundle
+import android.view.View
+import androidx.appcompat.app.AlertDialog
+import com.example.tfgwallet.databinding.ActivityLoginBinding
+import com.example.tfgwallet.databinding.ActivitySignupBinding
+import com.google.firebase.FirebaseApp
+import com.google.firebase.auth.FirebaseAuth
+
+
+
+class SignUpActivity : AppCompatActivity() {
+    private lateinit var binding: ActivitySignupBinding
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        binding = ActivitySignupBinding.inflate(layoutInflater)
+        val view = binding.root
+        setContentView(view)
+        FirebaseApp.initializeApp(this)
+        setup(binding)
+
+    }
+
+    private fun setup(binding: ActivitySignupBinding) {
+
+        binding.signUpButton.setOnClickListener {
+            if (binding.username.text.isNotEmpty() && binding.password.text.isNotEmpty()) {
+                FirebaseAuth.getInstance().createUserWithEmailAndPassword(binding.username.text.toString(),
+                    binding.password.text.toString()).addOnCompleteListener {
+                    if (it.isSuccessful) {
+                        showAlert("Success!","User ${it.result.user?.email} has been registered successfully.")
+
+                    } else {
+                        showAlert("Error","An error has occurred while trying to sign up.")
+                    }
+                }
+            }
+        }
+    }
+
+    private fun showAlert(title: String, message: String) {
+        val builder = AlertDialog.Builder(this)
+        builder.setTitle(title)
+        builder.setMessage(message)
+        builder.setPositiveButton("Accept", null)
+        val dialog: AlertDialog = builder.create()
+        dialog.show()
+        if (title.equals("Success!")) dialog.setOnDismissListener { finish() }
+    }
+}

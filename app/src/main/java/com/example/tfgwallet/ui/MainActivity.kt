@@ -30,20 +30,11 @@ class MainActivity : AppCompatActivity() {
 
     private fun setup(binding: ActivityLoginBinding) {
 
-        binding.signupButton.setOnClickListener {
-            if (binding.username.text.isNotEmpty() && binding.password.text.isNotEmpty()) {
-                FirebaseAuth.getInstance().createUserWithEmailAndPassword(binding.username.text.toString(),
-                    binding.password.text.toString()).addOnCompleteListener {
-                    if (it.isSuccessful) {
-                        showAlert("Success!","User ${it.result.user?.email} has been registered successfully.")
-                    } else {
-                        showAlert("Error","An error has occurred while trying to sign up.")
-                    }
-                }
-            }
-        }
-        binding.loginButton.setOnClickListener {
-            FirebaseAuth.getInstance().signInWithEmailAndPassword(binding.username.text.toString(), binding.password.text.toString())
+        binding.logInButton.setOnClickListener {
+            FirebaseAuth.getInstance().signInWithEmailAndPassword(
+                binding.username.text.toString(),
+                binding.password.text.toString()
+            )
                 .addOnCompleteListener {
                     if (it.isSuccessful) {
                         val homeIntent = Intent(this, HomeActivity::class.java).apply {
@@ -55,8 +46,18 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
         }
-    }
 
+        binding.signUp.setOnClickListener {
+            val signUpIntent = Intent(this@MainActivity, SignUpActivity::class.java)
+            startActivity(signUpIntent)
+
+        }
+
+        binding.forgottenPass.setOnClickListener {
+            val forgottenIntent = Intent(this@MainActivity, ForgotActivity::class.java)
+            startActivity(forgottenIntent)
+        }
+    }
     private fun showAlert(title: String, message: String) {
         val builder = AlertDialog.Builder(this)
         builder.setTitle(title)
