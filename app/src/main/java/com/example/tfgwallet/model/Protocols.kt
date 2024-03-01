@@ -5,7 +5,6 @@ import com.example.tfgwallet.model.Protocols.Companion.sha256
 import com.example.tfgwallet.model.Utilities.Companion.UByteArrayToBigInteger
 import com.example.tfgwallet.model.Utilities.Companion.readFile
 import com.example.tfgwallet.model.Utilities.Companion.toUByteArray
-import okhttp3.internal.Util
 
 import org.bitcoinj.core.ECKey
 import java.math.BigInteger
@@ -69,17 +68,14 @@ class Protocols {
          * if not default size will be 128 bits)
          * @param password used for seed generation
          */
-        class Bip39 {
-            private var context: Context
+        class Bip39
+            (size: Int, private var password: String, private var context: Context) {
             private var size: Int = 128
-            private var password: String = ""
 
-            constructor(size: Int, password: String, context: Context) {
+            init {
                 if (size >= 128 || this.size <= 256) { // size is 128 by default
                     this.size=size
                 }
-                this.password=password
-                this.context = context
             }
 
             fun getSeed(): Pair<String, UByteArray>{
@@ -93,14 +89,14 @@ class Protocols {
                 println("Entropy length ${entropy.length} (hex), ${entropy.length * 4} (binary)")
                 println(entropy)
 
-                var checksum: String = sha256(entropy)
+                val checksum: String = sha256(entropy)
                 println("Checksum length ${checksum.length} (hex), ${checksum.length * 4} (binary)")
                 println(checksum)
 
                 /* only keep first size/32 bits and concatenate at the end of the initial entropy
                    take into account that this is HEXADECIMAL STRING, thus size is not in bits, but
                    rather each digit represents 4 bits */
-                var modChecksum: String = checksum.dropLast(checksum.length - (entropy.length/ 32))
+                val modChecksum: String = checksum.dropLast(checksum.length - (entropy.length/ 32))
                 println(modChecksum)
                 entropy += modChecksum
                 println(entropy)
@@ -116,7 +112,7 @@ class Protocols {
                     }
                 }
                 // split entropy into 11-bits groups
-                var groups = mutableListOf<String>()
+                val groups = mutableListOf<String>()
 
                 for (i in 0 until entropy.length - 1 step 11) {
                     println(i)
@@ -128,8 +124,8 @@ class Protocols {
                 println(t_groups)
                 println(System.getProperty("user.dir"))
                 // read file and match every code to its word to give the eventual passphrase
-                var words = readFile(context,"english.txt")
-                var mnemonic: String = ""
+                val words = readFile(context,"english.txt")
+                var mnemonic = ""
                 for (group in t_groups) { // for every number get the i-th word
                     mnemonic += words[Integer.parseInt(group)] + " "
                 }
@@ -143,7 +139,7 @@ class Protocols {
 
                 val keySpec: KeySpec = PBEKeySpec(password.toCharArray(), salt.toByteArray(), iterations, keyLength)
                 val factory: SecretKeyFactory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA512")
-                var key = toUByteArray(factory.generateSecret(keySpec).encoded)
+                val key = toUByteArray(factory.generateSecret(keySpec).encoded)
                 val hexKey = key.joinToString("") { "%02x".format(it.toInt() and 0xFF) }
                 println("PBKDF2 generated key: $hexKey")
 
@@ -152,33 +148,34 @@ class Protocols {
         }
 
 
-        class Bip32 {
+        class Bip32// randomly initialize i
+        // public key
+// initialization// MASTER KEY GENERATION
+        // possibly include this code into a function since it is repeated
+            (seed: UByteArray) {
             val threshold: UInt = Int.MAX_VALUE.toUInt() // (2 ^ 31) - 1
-            private var seed = UByteArray(0)
-            private var privateKey = BigInteger.ZERO
-            private var publicKey = BigInteger.ZERO
-            private var chain = BigInteger.ZERO
-            constructor(seed: UByteArray) {
-                this.seed=seed
-                var size = 256
-                // MASTER KEY GENERATION
-                // possibly include this code into a function since it is repeated
+            var privateKey = BigInteger.ZERO
+            var publicKey = BigInteger.ZERO
+            var chain = BigInteger.ZERO
+
+            init {
+                val size = 256
                 var valid = false
                 var masterKey = BigInteger.ZERO  // initialization
                 var masterChain = BigInteger.ZERO
                 while(!valid) {
-                    var capitalI = toUByteArray(hmacSha512("Bitcoinseed".toByteArray(), seed.toByteArray()))
-                    var left = capitalI.copyOfRange(0, 31)
-                    var right = capitalI.copyOfRange(31, 63)
+                    val capitalI = toUByteArray(hmacSha512("Bitcoinseed".toByteArray(), seed.toByteArray()))
+                    val left = capitalI.copyOfRange(0, 31)
+                    val right = capitalI.copyOfRange(31, 63)
                     masterKey = parse256(left)
                     masterChain = parse256(right)
                     if (masterKey != BigInteger.ZERO || masterKey < size.toBigInteger())
                         valid = true
                 }
-                var output = CKDpriv(size, masterKey, masterChain, Random.nextUInt(0u, (2.0.pow(32).toUInt()) - 1u)) // randomly initialize i
+                val output = CKDpriv(size, masterKey, masterChain, Random.nextUInt(0u, (2.0.pow(32).toUInt()) - 1u)) // randomly initialize i
                 this.privateKey = output.first
                 this.chain = output.second
-                this.publicKey = UByteArrayToBigInteger(serP(point(output.first))) // public key
+                this.publicKey = UByteArrayToBigInteger(serP(point(output.first)))
             }
             /**
              * This function performs the multiplication of the integer i with the
@@ -202,7 +199,7 @@ class Protocols {
              */
             private fun ser32(i: UInt) : UByteArray {
                 var mask: UInt = 0xFF000000U
-                var byteArray = UByteArray(4)
+                val byteArray = UByteArray(4)
                 for (j in 0 until 4) {
                     val byte = ((i and mask) shr ((3 - j) * 8)).toUByte()
                     byteArray[j] = byte
@@ -262,13 +259,13 @@ class Protocols {
                 var chain: BigInteger = BigInteger.ZERO
                 var validKey = false
                 while(!validKey) {
-                    var ser32 = ser32(i)
+                    val ser32 = ser32(i)
                     // i >= 2^31, that is, a hardened child
-                    var data: UByteArray =
+                    val data: UByteArray =
                         ubyteArrayOf(0x00u) + ser256(SKpar) + ser32 // not sure about this
-                    var capitalI: UByteArray = toUByteArray(hmacSha512(cpar.toByteArray(), data.toByteArray()))
-                    var left = capitalI.copyOfRange(0, 31)
-                    var right = capitalI.copyOfRange(31, 63) // chain code
+                    val capitalI: UByteArray = toUByteArray(hmacSha512(cpar.toByteArray(), data.toByteArray()))
+                    val left = capitalI.copyOfRange(0, 31)
+                    val right = capitalI.copyOfRange(31, 63) // chain code
                     chain = UByteArrayToBigInteger(right)
                     SKi =
                         parse256(left) + SKpar % size.toBigInteger() // mod(n), being n key length

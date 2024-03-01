@@ -1,57 +1,81 @@
 package com.example.tfgwallet.control
 
 import android.content.Context
+import android.security.keystore.KeyGenParameterSpec
+import android.security.keystore.KeyProperties
 import com.example.tfgwallet.model.Protocols
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
+import java.io.ObjectInputStream
+import java.io.ObjectOutputStream
+import java.security.KeyStore
+import java.security.PrivateKey
+import java.security.PublicKey
+import javax.crypto.Cipher
+import javax.crypto.KeyGenerator
+import javax.crypto.spec.GCMParameterSpec
 
 class Control {
     companion object {
-        /*
-    val keyGenerator = KeyGenerator
-        .getInstance(KeyProperties.KEY_ALGORITHM_AES, "AndroidKeyStore")
 
-    val keyGenParameterSpec = KeyGenParameterSpec.Builder(
-        "secret_key",
-        KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT
-    )
-        .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
-        .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
-        .build()
-
-    keyGenerator.init(keyGenParameterSpec)
-    val secretKey = keyGenerator.generateKey()
-
-    var cipher = Cipher.getInstance("AES/GCM/NoPadding");
-    cipher.init(Cipher.ENCRYPT_MODE, secretKey)
-
-    val iv = cipher.iv
-    val keyPair = Pair(output.first.toByteArray(), pubK)
-    val outputStream = ByteArrayOutputStream()
-    val objectOutputStream = ObjectOutputStream(CipherOutputStream(outputStream, cipher))
-    objectOutputStream.writeObject(keyPair)
-    objectOutputStream.close()
-
-    val encryptedData = cipher.doFinal(outputStream.toByteArray())
-
-    // decrypt
-    var keyStore = KeyStore.getInstance("AndroidKeyStore")
-    keyStore.load(null)
-
-    val s = keyStore
-        .getEntry("secret_key", null)
-    val sKey = (s as KeyStore.SecretKeyEntry).secretKey
-    cipher = Cipher.getInstance("AES/GCM/NoPadding")
-    val spec = GCMParameterSpec(128, iv)
-    cipher.init(Cipher.DECRYPT_MODE, sKey, spec)
-
-    val decodedData = cipher.doFinal(encryptedData)*/
-
-        fun executeBIP32(seed: UByteArray) {
-            var bip32 = Protocols.Companion.Bip32(seed)
+        fun executeBIP32(seed: UByteArray): Protocols.Companion.Bip32 {
+            return Protocols.Companion.Bip32(seed)
         }
 
         fun executeBIP39(size: Int, password: String, context: Context): Pair<String, UByteArray> {
             var bip39 = Protocols.Companion.Bip39(size, password, context)
             return bip39.getSeed()
+        }
+
+        fun storeKeys(bip32: Protocols.Companion.Bip32) {
+
+            // Initialize the cipher with the new IV
+            val keyGenerator = KeyGenerator
+                .getInstance(KeyProperties.KEY_ALGORITHM_AES, "AndroidKeyStore")
+
+            val keyGenParameterSpec = KeyGenParameterSpec.Builder(
+                "secret_key",
+                KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT
+            )
+                .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
+                .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
+                .setRandomizedEncryptionRequired(false) // Disable randomized encryption to use custom IV
+                .build()
+
+            keyGenerator.init(keyGenParameterSpec)
+            val secretKey = keyGenerator.generateKey()
+
+            // Initialize the cipher with the new IV
+            var cipher = Cipher.getInstance("AES/GCM/NoPadding")
+            cipher.init(Cipher.ENCRYPT_MODE, secretKey)
+
+            // Encrypt the data
+            val keyPair = Pair(bip32.privateKey, bip32.publicKey)
+            val outputStream = ByteArrayOutputStream()
+            val objectOutputStream = ObjectOutputStream(outputStream)
+            objectOutputStream.writeObject(keyPair)
+            objectOutputStream.close()
+            val iv = cipher.iv
+
+            val encryptedData = cipher.doFinal(outputStream.toByteArray())
+
+            // decrypt
+            val keyStore = KeyStore.getInstance("AndroidKeyStore")
+            keyStore.load(null)
+
+            val s = keyStore
+                .getEntry("secret_key", null)
+            val sKey = (s as KeyStore.SecretKeyEntry).secretKey
+            cipher = Cipher.getInstance("AES/GCM/NoPadding")
+            val spec = GCMParameterSpec(128, iv)
+            cipher.init(Cipher.DECRYPT_MODE, sKey, spec)
+
+            val decodedData = cipher.doFinal(encryptedData)
+            val inputStream = ByteArrayInputStream(decodedData)
+            val objectInputStream = ObjectInputStream(inputStream)
+            val keyPairDecoded = objectInputStream.readObject() as Pair<PrivateKey, PublicKey>
+            objectInputStream.close()
+
         }
     }
 }
