@@ -1,5 +1,6 @@
 package com.example.tfgwallet.control
 
+import android.content.Context
 import com.example.tfgwallet.model.Protocols
 
 class Control {
@@ -48,8 +49,8 @@ class Control {
             var bip32 = Protocols.Companion.Bip32(seed)
         }
 
-        fun executeBIP39(size: Int, password: String): Pair<String, UByteArray> {
-            var bip39 = Protocols.Companion.Bip39(size, password)
+        fun executeBIP39(size: Int, password: String, context: Context): Pair<String, UByteArray> {
+            var bip39 = Protocols.Companion.Bip39(size, password, context)
             return bip39.getSeed()
         }
     }

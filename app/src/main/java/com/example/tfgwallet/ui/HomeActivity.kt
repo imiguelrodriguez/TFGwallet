@@ -34,8 +34,8 @@ class HomeActivity : AppCompatActivity() {
             }
         }
 
-        var output = Control.executeBIP39(128, "test")
-        showAlert("Mnemonic words", "These are your mnemonic words, please store them safely.\n" +
+        var output = Control.executeBIP39(128, "test", this)
+        showAlert("Mnemonic words", "These are your mnemonic words, please store them safely.\n\n" +
                 output.first)
 
     }

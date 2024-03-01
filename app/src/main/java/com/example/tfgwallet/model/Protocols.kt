@@ -1,5 +1,6 @@
 package com.example.tfgwallet.model
 
+import android.content.Context
 import com.example.tfgwallet.model.Protocols.Companion.sha256
 import com.example.tfgwallet.model.Utilities.Companion.UByteArrayToBigInteger
 import com.example.tfgwallet.model.Utilities.Companion.readFile
@@ -69,14 +70,16 @@ class Protocols {
          * @param password used for seed generation
          */
         class Bip39 {
+            private var context: Context
             private var size: Int = 128
             private var password: String = ""
 
-            constructor(size: Int, password: String) {
+            constructor(size: Int, password: String, context: Context) {
                 if (size >= 128 || this.size <= 256) { // size is 128 by default
                     this.size=size
                 }
                 this.password=password
+                this.context = context
             }
 
             fun getSeed(): Pair<String, UByteArray>{
@@ -125,7 +128,7 @@ class Protocols {
                 println(t_groups)
                 println(System.getProperty("user.dir"))
                 // read file and match every code to its word to give the eventual passphrase
-                var words = readFile("app/resources/words.txt")
+                var words = readFile(context,"english.txt")
                 var mnemonic: String = ""
                 for (group in t_groups) { // for every number get the i-th word
                     mnemonic += words[Integer.parseInt(group)] + " "
@@ -287,9 +290,9 @@ fun main(args: Array<String>) {
     val inputString = "Hello, this is a test string for hashing."
     val hashedString = sha256(inputString)
     println("SHA256 Hash: $hashedString")
-    var bip39 = Protocols.Companion.Bip39(256, "password")
+    /*var bip39 = Protocols.Companion.Bip39(256, "password")
     var seed = bip39.getSeed()
-    var bip32 = Protocols.Companion.Bip32(seed.second)
+    var bip32 = Protocols.Companion.Bip32(seed.second)*/
 
 
 }
