@@ -1,11 +1,13 @@
 package com.example.tfgwallet.ui.fragments
 
+import com.example.tfgwallet.ui.QRCodeScannerActivity
+import android.content.Intent
 import android.os.Bundle
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import com.example.tfgwallet.R
+import com.example.tfgwallet.databinding.FragmentHomeBinding
 
 // TODO: Rename parameter arguments, choose names that match
 // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
@@ -21,12 +23,17 @@ class HomeFragment : Fragment() {
     // TODO: Rename and change types of parameters
     private var param1: String? = null
     private var param2: String? = null
-
+    private lateinit var binding: FragmentHomeBinding
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         arguments?.let {
             param1 = it.getString(ARG_PARAM1)
             param2 = it.getString(ARG_PARAM2)
+        }
+        binding = FragmentHomeBinding.inflate(layoutInflater)
+        binding.scan.setOnClickListener{
+            val qrIntent = Intent(this@HomeFragment.requireContext(), QRCodeScannerActivity::class.java)
+            startActivity(qrIntent)
         }
     }
 
@@ -34,8 +41,8 @@ class HomeFragment : Fragment() {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_home, container, false)
+
+        return binding.root
     }
 
     companion object {

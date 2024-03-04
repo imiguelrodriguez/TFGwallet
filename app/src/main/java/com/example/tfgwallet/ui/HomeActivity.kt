@@ -34,11 +34,6 @@ class HomeActivity : AppCompatActivity() {
             }
         }
 
-        val bip39 = Control.executeBIP39(128, "test", this)
-        showAlert("Mnemonic words", "These are your mnemonic words, please store them safely.\n\n" +
-                bip39.first)
-        val bip32 = Control.executeBIP32(bip39.second)
-        Control.storeKeys(bip32)
     }
     private fun replaceFragment(fragment: Fragment): Boolean {
         val fragmentManager: FragmentManager  = supportFragmentManager
