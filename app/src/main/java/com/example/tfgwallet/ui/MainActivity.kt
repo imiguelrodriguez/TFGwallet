@@ -1,5 +1,6 @@
 package com.example.tfgwallet.ui
 
+import android.content.Context
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
@@ -40,7 +41,13 @@ class MainActivity : AppCompatActivity() {
                         val homeIntent = Intent(this, HomeActivity::class.java).apply {
                             putExtra("email", it.result.user.toString())
                         }
+                        // to save the log in status
+                        val sharedPrefs = getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
+                        sharedPrefs.edit().putBoolean("isLoggedIn", true).apply()
+
+                        homeIntent.flags = Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK
                         startActivity(homeIntent)
+                        finish()
                     } else {
                         showAlert("Error", "Problem signing in for user ${binding.username.text}")
                     }

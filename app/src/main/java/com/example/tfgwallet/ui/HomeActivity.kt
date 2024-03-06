@@ -7,7 +7,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentTransaction
 import com.example.tfgwallet.ui.fragments.HomeFragment
-import com.example.tfgwallet.ui.fragments.ProfileFragment
+import com.example.tfgwallet.ui.fragments.KeysFragment
 import com.example.tfgwallet.R
 import com.example.tfgwallet.control.Control
 import com.example.tfgwallet.ui.fragments.SettingsFragment
@@ -27,13 +27,17 @@ class HomeActivity : AppCompatActivity() {
             when(it.itemId) {
                 R.id.home -> replaceFragment(HomeFragment())
                 R.id.settings -> replaceFragment(SettingsFragment())
-                R.id.profile-> replaceFragment(ProfileFragment())
+                R.id.keys -> replaceFragment(KeysFragment())
                 else -> {
                     true
                 }
             }
         }
 
+    }
+
+    override fun onBackPressed() {
+      finish()
     }
     private fun replaceFragment(fragment: Fragment): Boolean {
         val fragmentManager: FragmentManager  = supportFragmentManager

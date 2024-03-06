@@ -12,7 +12,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        app:layout_constraintGuide_percent="0.14" />
+        app:layout_constraintGuide_percent="0.19" />
 
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/cardView"
@@ -26,6 +26,26 @@
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/recoverButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="24dp"
+                android:layout_marginTop="24dp"
+                android:layout_marginEnd="24dp"
+                android:layout_marginBottom="24dp"
+                android:backgroundTint="@color/crypticPurple"
+                android:text="RECOVER PASSWORD"
+                android:textAlignment="center"
+                android:textColor="@color/binaryWhite"
+                android:textSize="22sp"
+                android:textStyle="bold"
+                app:cornerRadius="16dp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/username" />
 
             <EditText
                 android:id="@+id/username"
@@ -41,99 +61,6 @@
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
-
-            <EditText
-                android:id="@+id/password"
-                android:layout_width="220dp"
-                android:layout_height="50dp"
-                android:layout_marginTop="32dp"
-                android:drawableLeft="@drawable/baseline_lock_24"
-                android:drawablePadding="6dp"
-                android:drawableTint="@color/colorPrimary"
-                android:ems="10"
-                android:hint="@string/prompt_password"
-                android:inputType="textPassword"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/username"
-                app:passwordToggleEnabled="true"
-                />
-
-            <CheckBox
-                android:id="@+id/checkBox"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:minHeight="48dp"
-                android:text="Enable 2AF in future accesses"
-                android:textColor="@color/colorPrimaryDark"
-                android:textSize="20sp"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintHorizontal_bias="0.498"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/password" />
-
-            <LinearLayout
-                android:id="@+id/phoneLayout"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:orientation="horizontal"
-                android:visibility="gone"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/checkBox">
-
-                <com.hbb20.CountryCodePicker
-                    android:id="@+id/country_code"
-                    android:layout_width="96dp"
-                    android:layout_height="match_parent"
-                    android:layout_marginRight="2dp"
-                    android:gravity="center"
-                    app:ccp_autoDetectCountry="true"
-                    app:ccp_defaultNameCode="ES"
-                    app:ccp_showFlag="true"
-                    app:ccp_showFullName="true"
-                    app:ccp_showNameCode="true">
-
-                </com.hbb20.CountryCodePicker>
-
-                <EditText
-                    android:id="@+id/editTextPhone"
-                    android:layout_width="wrap_content"
-                    android:layout_height="match_parent"
-                    android:layout_marginLeft="2dp"
-                    android:ems="10"
-                    android:hint="@android:string/emptyPhoneNumber"
-                    android:inputType="phone"
-                    android:minHeight="48dp" />
-
-            </LinearLayout>
-
-            <LinearLayout
-                android:id="@+id/linearLayout"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:orientation="horizontal"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/phoneLayout">
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/recoverButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginLeft="16dp"
-                    android:layout_marginRight="16dp"
-                    android:backgroundTint="@color/crypticPurple"
-                    android:text="RECOVER PASSWORD"
-                    android:textAlignment="center"
-                    android:textColor="@color/binaryWhite"
-                    android:textSize="22sp"
-                    android:textStyle="bold"
-                    app:cornerRadius="16dp" />
-
-            </LinearLayout>
 
         </androidx.constraintlayout.widget.ConstraintLayout>
 
@@ -153,8 +80,8 @@
         android:textStyle="bold"
         app:layout_constraintBottom_toTopOf="@+id/cardView"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.0" />
+        app:layout_constraintVertical_bias="1.0" />
 </androidx.constraintlayout.widget.ConstraintLayout>
