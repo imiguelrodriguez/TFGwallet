@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+
+    <!-- Dark Blues and Grays -->
+    <color name="colorPrimary">#001F3F</color> <!-- Dark Navy -->
+    <color name="colorPrimaryDark">#001a33</color> <!-- Darker Navy -->
+    <color name="colorAccent">#607D8B</color> <!-- Light Gray -->
+
+    <!-- Cyber Green -->
+    <color name="cyberGreen">#4CAF50</color> <!-- Green -->
+    <color name="cyberGreenLight">#8BC34A</color> <!-- Light Green -->
+
+    <!-- Cryptic Purple -->
+    <color name="crypticPurple">#673AB7</color> <!-- Purple -->
+    <color name="crypticPurpleLight">#9575CD</color> <!-- Light Purple -->
+
+    <!-- Techy Neutrals -->
+    <color name="techyGray">#757575</color> <!-- Metallic Gray -->
+    <color name="techySilver">#B0BEC5</color> <!-- Silver -->
+
+    <!-- Red Alert -->
+    <color name="redAlert">#D32F2F</color> <!-- Red -->
+    <color name="redAlertDark">#C62828</color> <!-- Dark Red -->
+
+    <!-- Binary Black and White -->
+    <color name="binaryBlack">#000000</color> <!-- Black -->
+    <color name="binaryWhite">#FFFFFF</color> <!-- White -->
+
+    <!-- Firewall Orange -->
+    <color name="firewallOrange">#FF5722</color> <!-- Orange -->
+    <color name="firewallOrangeDark">#E64A19</color> <!-- Dark Orange -->
+
+    <!-- Code Blue -->
+    <color name="codeBlue">#2196F3</color> <!-- Blue -->
+    <color name="codeBlueLight">#64B5F6</color> <!-- Light Blue -->
+</resources>
