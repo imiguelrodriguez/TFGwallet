@@ -1,17 +1,19 @@
 package com.example.tfgwallet.ui
 
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentTransaction
+import com.example.tfgwallet.R
+import com.example.tfgwallet.databinding.ActivityHomeBinding
+import com.example.tfgwallet.model.IPFSManager
 import com.example.tfgwallet.ui.fragments.HomeFragment
 import com.example.tfgwallet.ui.fragments.KeysFragment
-import com.example.tfgwallet.R
-import com.example.tfgwallet.control.Control
 import com.example.tfgwallet.ui.fragments.SettingsFragment
-import com.example.tfgwallet.databinding.ActivityHomeBinding
 
 class HomeActivity : AppCompatActivity() {
     private lateinit var binding: ActivityHomeBinding
@@ -33,7 +35,6 @@ class HomeActivity : AppCompatActivity() {
                 }
             }
         }
-
     }
 
     override fun onBackPressed() {

@@ -7,7 +7,6 @@ plugins {
 android {
     namespace 'com.example.tfgwallet'
     compileSdk 34
-
     viewBinding {
         enabled = true
     }
@@ -57,10 +56,15 @@ dependencies {
     implementation 'com.google.zxing:core:3.4.1'
     implementation 'com.journeyapps:zxing-android-embedded:4.3.0'
 
+/
     implementation 'org.web3j:core:5.0.0'
     implementation 'org.web3j:abi:5.0.0'
     implementation 'org.web3j:crypto:5.0.0'
+/
+    implementation 'io.metamask.androidsdk:metamask-android-sdk:0.2.1'
     implementation 'com.hbb20:ccp:2.6.0'
+
+    implementation "com.github.ligi:ipfs-api-kotlin:0.15"
 
     implementation platform('com.google.firebase:firebase-bom:32.6.0')
     implementation("com.google.firebase:firebase-auth-ktx")
