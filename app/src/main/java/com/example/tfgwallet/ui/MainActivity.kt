@@ -9,8 +9,6 @@ import androidx.appcompat.app.AlertDialog
 import com.example.tfgwallet.databinding.ActivityLoginBinding
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
-import com.hbb20.CountryCodePicker
-
 
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityLoginBinding
@@ -39,7 +37,7 @@ class MainActivity : AppCompatActivity() {
                 .addOnCompleteListener {
                     if (it.isSuccessful) {
                         val homeIntent = Intent(this, HomeActivity::class.java).apply {
-                            putExtra("email", it.result.user.toString())
+                            putExtra("email", binding.username.text.toString())
                         }
                         // to save the log in status
                         val sharedPrefs = getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)

@@ -1,12 +1,11 @@
 package com.example.tfgwallet.model
 
 import android.content.Context
-import com.example.tfgwallet.model.Protocols.Companion.sha256
 import com.example.tfgwallet.model.Utilities.Companion.UByteArrayToBigInteger
 import com.example.tfgwallet.model.Utilities.Companion.readFile
 import com.example.tfgwallet.model.Utilities.Companion.toUByteArray
 
-import org.bitcoinj.core.ECKey
+//import org.bitcoinj.core.ECKey
 import java.math.BigInteger
 import java.security.MessageDigest
 import java.security.SecureRandom
@@ -175,8 +174,8 @@ class Protocols {
                 val output = CKDpriv(size, masterKey, masterChain, Random.nextUInt(0u, (2.0.pow(32).toUInt()) - 1u)) // randomly initialize i
                 this.privateKey = output.first
                 this.chain = output.second
-                this.publicKey = UByteArrayToBigInteger(serP(point(output.first)))
-            }
+                //this.publicKey = UByteArrayToBigInteger(serP(point(output.first)))
+            }/*
             /**
              * This function performs the multiplication of the integer i with the
              * secp256k1 base point (elliptic curve y^2 = x^3 + 7 (mod p)) and returns
@@ -188,7 +187,7 @@ class Protocols {
             private fun point(p: BigInteger): org.bouncycastle.math.ec.ECPoint {
                 val basePoint : org.bouncycastle.math.ec.ECPoint = ECKey.CURVE.g
                 return basePoint.multiply(p)
-            }
+            }*/
 
             /**
              * This function performs the serialization of
@@ -233,12 +232,12 @@ class Protocols {
              *
              * @param P the (x,y) ECPoint
              * @return the resulting SEC1 compressed UByteArray
-             */
-            private fun serP(P: org.bouncycastle.math.ec.ECPoint): UByteArray {
+             *//*
+            private fun serP(P: .math.ec.ECPoint): UByteArray {
                 val xCoordBytes = ser256(P.xCoord.toBigInteger())
                 val headerByte: UByte = if (P.yCoord.toBigInteger() % BigInteger("2") == BigInteger.ZERO) 0x02.toUByte() else 0x03.toUByte()
                 return ubyteArrayOf(headerByte) + xCoordBytes
-            }
+            }*/
 
             /**
              * This function converts a 32-byte array to a BigInteger
@@ -284,12 +283,13 @@ class Protocols {
 }
 
 fun main(args: Array<String>) {
+    /*
     val inputString = "Hello, this is a test string for hashing."
     val hashedString = sha256(inputString)
     println("SHA256 Hash: $hashedString")
-    /*var bip39 = Protocols.Companion.Bip39(256, "password")
+    var bip39 = Protocols.Companion.Bip39(256, "password")
     var seed = bip39.getSeed()
-    var bip32 = Protocols.Companion.Bip32(seed.second)*/
-
+    var bip32 = Protocols.Companion.Bip32(seed.second)
+*/
 
 }

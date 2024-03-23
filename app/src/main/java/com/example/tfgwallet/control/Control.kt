@@ -3,7 +3,13 @@ package com.example.tfgwallet.control
 import android.content.Context
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
+import com.example.tfgwallet.databinding.ActivitySignupBinding
+import com.example.tfgwallet.model.Blockchain
 import com.example.tfgwallet.model.Protocols
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
+import org.web3j.crypto.Credentials
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.ObjectInputStream
@@ -15,8 +21,10 @@ import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
 import javax.crypto.spec.GCMParameterSpec
 
+
 class Control {
     companion object {
+
 
         fun executeBIP32(seed: UByteArray): Protocols.Companion.Bip32 {
             return Protocols.Companion.Bip32(seed)
@@ -76,6 +84,26 @@ class Control {
             val keyPairDecoded = objectInputStream.readObject() as Pair<PrivateKey, PublicKey>
             objectInputStream.close()
 
+        }
+
+
+        fun setUp(binding: ActivitySignupBinding, context: Context): String {
+            val mnemonicList = Blockchain.generateMnemonic()
+
+            val mnemonic = mnemonicList.joinToString(separator = " ")
+            val masterKeyPair = Blockchain.generateKeyPair(mnemonicList, binding.password.text.toString())
+
+            val user = binding.username.text.toString().substringBefore("@")
+            Blockchain.encryptRSA(masterKeyPair, user, context)
+
+            val acc = Credentials.create(masterKeyPair)
+            val ganacheAcc = Credentials.create("0x6bb31d0829a07ada4a0198536266c45228bbbdac0789314a64faf12fc6dd4965")
+            GlobalScope.launch(Dispatchers.IO) {
+                val bc = Blockchain
+                bc.connect("http://192.168.0.105:7545")
+                bc.send(ganacheAcc, acc.address, 1)
+            }
+            return mnemonic
         }
     }
 }

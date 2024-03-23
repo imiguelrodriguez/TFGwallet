@@ -2,15 +2,16 @@ package com.example.tfgwallet.model
 
 import io.ipfs.kotlin.IPFS
 import io.ipfs.kotlin.IPFSConfiguration
+import io.ipfs.kotlin.model.NamedHash
 import java.io.File
 
-class IPFSManager {
-    private lateinit var manager: IPFS
+class IPFSManager  {
+    private var manager: IPFS
     init {
-        manager = IPFS(IPFSConfiguration(base_url = "http://localhost:5001/api/v0/"))
+        manager = IPFS(IPFSConfiguration(base_url = "http://192.168.100.33:5001/api/v0/"))
     }
-    fun addFile(name: String) {
-        manager.add.file(File(name), name)
+    fun addFile(name: String): NamedHash {
+        return manager.add.file(File(name), name)
     }
 
 

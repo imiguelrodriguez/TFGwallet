@@ -1,17 +1,12 @@
 package com.example.tfgwallet.ui
 
-import android.content.DialogInterface
-import android.content.Intent
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.view.View
 import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.app.AppCompatActivity
 import com.example.tfgwallet.control.Control
-import com.example.tfgwallet.databinding.ActivityLoginBinding
 import com.example.tfgwallet.databinding.ActivitySignupBinding
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
-
 
 
 class SignUpActivity : AppCompatActivity() {
@@ -50,7 +45,7 @@ class SignUpActivity : AppCompatActivity() {
         builder.setTitle(title)
         builder.setMessage(message)
         builder.setPositiveButton("Accept", null)
-        if (title == "Success!") builder.setOnDismissListener{setUpKeys()}
+        if (title == "Success!") builder.setOnDismissListener{setUpKeysLib()}
         val dialog: AlertDialog = builder.create()
         dialog.show()
         if (title == "Mnemonic words") dialog.setOnDismissListener { finish() }
@@ -64,5 +59,24 @@ class SignUpActivity : AppCompatActivity() {
         // You can continue your sequential logic here
         val bip32 = Control.executeBIP32(bip39.second)
         Control.storeKeys(bip32)
+    }
+
+    fun setUpKeysLib() {
+        val mnemonic = Control.setUp(binding, this)
+        showAlert("Mnemonic words", "These are your mnemonic words, please store them safely.\n" +
+                "\n $mnemonic")
+
+/*
+        try {
+            val wallet = WalletUtils.generateBip39WalletFromMnemonic(
+                binding.password.text.toString(),
+                mnemonic,
+                File(filesDir.path)
+            )
+            showAlert("Mnemonic words", wallet.mnemonic)
+        } catch (e: Exception) {
+            e.message?.let { showAlert("Mnemonic words", it) }
+        }*/
+
     }
 }
