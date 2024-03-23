@@ -103,6 +103,8 @@ class Control {
                 bc.connect("http://192.168.0.105:7545")
                 bc.send(ganacheAcc, acc.address, 1)
             }
+
+
             return mnemonic
         }
     }

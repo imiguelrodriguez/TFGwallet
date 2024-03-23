@@ -105,7 +105,14 @@ object Blockchain {
         // Encrypt data with RSA public key
         val cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding")
         cipher.init(Cipher.ENCRYPT_MODE, keyPair.public)
-        val encryptedData = cipher.doFinal(data.privateKey.toByteArray() + data.publicKey.toByteArray())
+
+        val result = ByteArray(data.privateKey.toByteArray().size + data.publicKey.toByteArray().size + 1)
+        result[0] = data.privateKey.toByteArray().size.toByte()
+        val concatenate = data.privateKey.toByteArray() + data.publicKey.toByteArray()
+        System.arraycopy(concatenate, 0, result, 1, concatenate.size)
+
+        val encryptedData = cipher.doFinal(result)
+        Log.i("Key length", "Private key size is ${data.privateKey.toByteArray().size} and public key size is ${data.publicKey.toByteArray().size}")
         Log.i("Encrypt", "Encrypting private key ${data.privateKey} and public key ${data.publicKey}")
         val directory = context.getDir("users", Context.MODE_PRIVATE)
         createDirectory("${directory.path}/$userId")
@@ -133,8 +140,9 @@ object Blockchain {
         val encryptedData = objectInputStream.readObject() as ByteArray
         objectInputStream.close()
         val decryptedData = cipher.doFinal(encryptedData)
-        val privateKeyBytes = decryptedData.copyOfRange(0, PRIVATE_KEY_LENGTH + 1)
-        val publicKeyBytes = decryptedData.copyOfRange(PRIVATE_KEY_LENGTH + 1, decryptedData.size)
+        val keyLength = decryptedData[0].toInt()
+        val privateKeyBytes = decryptedData.copyOfRange(1, keyLength + 1)
+        val publicKeyBytes = decryptedData.copyOfRange(keyLength + 1, decryptedData.size)
 
         // Convert byte arrays back to BigIntegers
         val privateKeyBigInt = BigInteger(privateKeyBytes)
