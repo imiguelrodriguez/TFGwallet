@@ -8,6 +8,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentTransaction
 import com.example.tfgwallet.R
+import com.example.tfgwallet.control.Control
 import com.example.tfgwallet.databinding.ActivityHomeBinding
 import com.example.tfgwallet.model.Blockchain
 import com.example.tfgwallet.model.IPFSManager
@@ -33,9 +34,12 @@ class HomeActivity : AppCompatActivity() {
             if (email != null) {
                 val user = email.substringBefore("@")
                 Log.i("Email", user)
-                val keyPair: Pair<BigInteger, BigInteger>? = Blockchain.decryptRsa("$user/login$user.bin", user,this)
+                val keyPair: Triple<BigInteger, BigInteger, ByteArray>? = Blockchain.decryptRsa("$user/login$user.bin", user,this)
                 if (keyPair != null) {
                     Log.i("Key", "Your private key is ${keyPair.first} and public key is ${keyPair.second}")
+                    Log.i("Chain code", "Your chain code is ${BigInteger(keyPair.third)}")
+                    Control.deploySKM_SC()
+
                 }
             }
         }

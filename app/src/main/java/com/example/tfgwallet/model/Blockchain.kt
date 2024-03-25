@@ -24,7 +24,7 @@ import java.security.SecureRandom
 import javax.crypto.Cipher
 
 object Blockchain {
-    private lateinit var web3: Web3j
+    lateinit var web3: Web3j
     private const val PRIVATE_KEY_LENGTH: Int = 32
     fun connect(url: String) {
         try {
@@ -106,14 +106,16 @@ object Blockchain {
         val cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding")
         cipher.init(Cipher.ENCRYPT_MODE, keyPair.public)
 
-        val result = ByteArray(data.privateKey.toByteArray().size + data.publicKey.toByteArray().size + 1)
+        val result = ByteArray(data.privateKey.toByteArray().size + data.publicKey.toByteArray().size + data.chainCode.size + 2)
         result[0] = data.privateKey.toByteArray().size.toByte()
-        val concatenate = data.privateKey.toByteArray() + data.publicKey.toByteArray()
-        System.arraycopy(concatenate, 0, result, 1, concatenate.size)
+        result[1] = data.publicKey.toByteArray().size.toByte()
+        val concatenate = data.privateKey.toByteArray() + data.publicKey.toByteArray() + data.chainCode
+        System.arraycopy(concatenate, 0, result, 2, concatenate.size)
 
         val encryptedData = cipher.doFinal(result)
         Log.i("Key length", "Private key size is ${data.privateKey.toByteArray().size} and public key size is ${data.publicKey.toByteArray().size}")
         Log.i("Encrypt", "Encrypting private key ${data.privateKey} and public key ${data.publicKey}")
+        Log.i("Chain code", "Chain code is ${BigInteger(data.chainCode)}")
         val directory = context.getDir("users", Context.MODE_PRIVATE)
         createDirectory("${directory.path}/$userId")
         val outputStream = FileOutputStream("${directory.path}/$userId/login$userId.bin")
@@ -124,7 +126,7 @@ object Blockchain {
     }
 
 
-    fun decryptRsa(inputFile: String, userId: String, context: Context): Pair<BigInteger, BigInteger>? {
+    fun decryptRsa(inputFile: String, userId: String, context: Context): Triple<BigInteger, BigInteger, ByteArray>? {
         val keyStore = KeyStore.getInstance("AndroidKeyStore")
         keyStore.load(null)
         // Retrieve RSA private key
@@ -140,15 +142,17 @@ object Blockchain {
         val encryptedData = objectInputStream.readObject() as ByteArray
         objectInputStream.close()
         val decryptedData = cipher.doFinal(encryptedData)
-        val keyLength = decryptedData[0].toInt()
-        val privateKeyBytes = decryptedData.copyOfRange(1, keyLength + 1)
-        val publicKeyBytes = decryptedData.copyOfRange(keyLength + 1, decryptedData.size)
+        val privateKeyLength = decryptedData[0].toInt()
+        val publicKeyLength = decryptedData[1].toInt()
+        val privateKeyBytes = decryptedData.copyOfRange(2, privateKeyLength + 2)
+        val publicKeyBytes = decryptedData.copyOfRange(privateKeyLength + 2, privateKeyLength + publicKeyLength + 2)
+        val chainCode = decryptedData.copyOfRange(privateKeyLength + publicKeyLength + 2, decryptedData.size)
 
         // Convert byte arrays back to BigIntegers
         val privateKeyBigInt = BigInteger(privateKeyBytes)
         val publicKeyBigInt = BigInteger(publicKeyBytes)
 
-        return Pair(privateKeyBigInt, publicKeyBigInt)
+        return Triple(privateKeyBigInt, publicKeyBigInt, chainCode)
 
     }
 
