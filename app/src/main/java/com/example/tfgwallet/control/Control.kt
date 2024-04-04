@@ -10,7 +10,9 @@ import com.example.tfgwallet.model.Blockchain
 import com.example.tfgwallet.model.Protocols
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
+import okhttp3.internal.wait
 import org.web3j.crypto.Credentials
 import org.web3j.tx.gas.DefaultGasProvider
 import org.web3j.tx.gas.StaticGasProvider
@@ -31,9 +33,10 @@ import javax.crypto.spec.GCMParameterSpec
 class Control {
     companion object {
 
-        fun deploySKM_SC() {
+        suspend fun deploySKM_SC(): String {
+            var contractAddress : String = ""
             val bc = Blockchain
-            GlobalScope.launch(Dispatchers.IO) {
+            val res = GlobalScope.async(Dispatchers.IO) {
                 bc.connect("http://192.168.0.105:7545")
 
                 val gasProvider = DefaultGasProvider()
@@ -50,8 +53,10 @@ class Control {
 
                 val contract =
                     skmSCManager.newSKM_SC(entities.transactionManagerSmartphoneApp)
+                return@async contract.contractAddress
             }
-
+            contractAddress = res.await()
+            return contractAddress
         }
 
         fun executeBIP32(seed: UByteArray): Protocols.Companion.Bip32 {

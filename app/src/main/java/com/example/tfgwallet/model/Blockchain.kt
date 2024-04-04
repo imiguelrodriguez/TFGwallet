@@ -23,9 +23,9 @@ import java.security.KeyStore
 import java.security.SecureRandom
 import javax.crypto.Cipher
 
+
 object Blockchain {
     lateinit var web3: Web3j
-    private const val PRIVATE_KEY_LENGTH: Int = 32
     fun connect(url: String) {
         try {
             web3 = Web3j.build(HttpService(url))
