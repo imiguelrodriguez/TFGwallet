@@ -1,5 +1,7 @@
 package com.example.tfgwallet.ui
 
+import android.content.Context
+import android.content.res.Configuration
 import android.os.Bundle
 import android.util.Log
 import androidx.appcompat.app.AlertDialog
@@ -8,7 +10,6 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentTransaction
 import com.example.tfgwallet.R
-import com.example.tfgwallet.control.Control
 import com.example.tfgwallet.databinding.ActivityHomeBinding
 import com.example.tfgwallet.model.Blockchain
 import com.example.tfgwallet.model.IPFSManager
@@ -17,7 +18,6 @@ import com.example.tfgwallet.ui.fragments.KeysFragment
 import com.example.tfgwallet.ui.fragments.SettingsFragment
 import com.google.firebase.annotations.concurrent.Background
 import java.math.BigInteger
-
 
 
 class HomeActivity : AppCompatActivity() {
@@ -34,12 +34,15 @@ class HomeActivity : AppCompatActivity() {
             val email = intent.getStringExtra("email")
             if (email != null) {
                 val user = email.substringBefore("@")
+                val preferences = getSharedPreferences("my_prefs", Context.MODE_PRIVATE)
+                val editor = preferences.edit()
+                editor.putString("user", user)
+                editor.apply()
                 Log.i("Email", user)
                 val keyPair: Triple<BigInteger, BigInteger, ByteArray>? = Blockchain.decryptRsa("$user/login$user.bin", user,this)
                 if (keyPair != null) {
                     Log.i("Key", "Your private key is ${keyPair.first} and public key is ${keyPair.second}")
                     Log.i("Chain code", "Your chain code is ${BigInteger(keyPair.third)}")
-                    Control.deploySKM_SC()
 
                 }
             }
@@ -93,5 +96,9 @@ class HomeActivity : AppCompatActivity() {
         builder.setPositiveButton("Accept", null)
         val dialog: AlertDialog = builder.create()
         dialog.show()
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
     }
 }

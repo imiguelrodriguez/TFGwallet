@@ -1,5 +1,6 @@
 package com.example.tfgwallet.ui
 
+import android.content.Context
 import android.os.Bundle
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -7,6 +8,9 @@ import com.example.tfgwallet.control.Control
 import com.example.tfgwallet.databinding.ActivitySignupBinding
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.async
 
 
 class SignUpActivity : AppCompatActivity() {
@@ -29,8 +33,13 @@ class SignUpActivity : AppCompatActivity() {
                 FirebaseAuth.getInstance().createUserWithEmailAndPassword(binding.username.text.toString(),
                     binding.password.text.toString()).addOnCompleteListener {
                     if (it.isSuccessful) {
-                        showAlert("Success!","User ${it.result.user?.email} has been registered successfully.")
+                        val userPreferences = getSharedPreferences("user_${binding.username.text.toString().substringBefore("@")}", Context.MODE_PRIVATE)
+                        userPreferences.edit().putBoolean("isTwoFactorAuthEnabled", binding.checkBox.isChecked).apply()
 
+                        showAlert("Success!","User ${it.result.user?.email} has been registered successfully.")
+                        GlobalScope.async(Dispatchers.IO) {
+                            deploySC()
+                        }
                     } else {
                         showAlert("Error","An error has occurred while trying to sign up.")
                     }
@@ -40,6 +49,14 @@ class SignUpActivity : AppCompatActivity() {
 
     }
 
+    private suspend fun deploySC() {
+        val context = this
+        val res = GlobalScope.async(Dispatchers.IO) {
+            return@async Control.deploySKM_SC(context)
+        }
+        val address = res.await()
+        runOnUiThread { showAlert("address", address) }
+    }
     private fun showAlert(title: String, message: String) {
         val builder = AlertDialog.Builder(this)
         builder.setTitle(title)
@@ -48,7 +65,10 @@ class SignUpActivity : AppCompatActivity() {
         if (title == "Success!") builder.setOnDismissListener{setUpKeysLib()}
         val dialog: AlertDialog = builder.create()
         dialog.show()
-        if (title == "Mnemonic words") dialog.setOnDismissListener { finish() }
+        if (title == "Mnemonic words") dialog.setOnDismissListener { GlobalScope.async(Dispatchers.IO) {
+            deploySC()
+        } }
+        if(title == "address") dialog.setOnDismissListener{finish()}
     }
 
     private fun setUpKeys() {
@@ -65,18 +85,5 @@ class SignUpActivity : AppCompatActivity() {
         val mnemonic = Control.setUp(binding, this)
         showAlert("Mnemonic words", "These are your mnemonic words, please store them safely.\n" +
                 "\n $mnemonic")
-
-/*
-        try {
-            val wallet = WalletUtils.generateBip39WalletFromMnemonic(
-                binding.password.text.toString(),
-                mnemonic,
-                File(filesDir.path)
-            )
-            showAlert("Mnemonic words", wallet.mnemonic)
-        } catch (e: Exception) {
-            e.message?.let { showAlert("Mnemonic words", it) }
-        }*/
-
     }
 }

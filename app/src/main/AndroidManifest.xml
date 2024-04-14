@@ -20,19 +20,21 @@
             android:name=".ui.HomeActivity"
             android:exported="false"
             android:label="@string/title_activity_home"
-            android:theme="@style/Theme.TFGwallet.NoActionBar" />
+            android:theme="@style/Theme.TFGwallet.NoActionBar"
+            android:configChanges="orientation"/>
         <activity
             android:name=".ui.MainActivity"
-            android:exported="true">
+            android:exported="true"
+            android:configChanges="orientation">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".ui.ForgotActivity" />
-        <activity android:name=".ui.SignUpActivity" />
-        <activity android:name=".ui.QRCodeScannerActivity" />
+        <activity android:name=".ui.ForgotActivity"  android:configChanges="orientation"/>
+        <activity android:name=".ui.SignUpActivity"  android:configChanges="orientation"/>
+        <activity android:name=".ui.QRCodeScannerActivity"  android:configChanges="orientation"/>
         <activity android:name="com.journeyapps.barcodescanner.CaptureActivity"
             android:screenOrientation="fullSensor"
             android:stateNotNeeded="true"

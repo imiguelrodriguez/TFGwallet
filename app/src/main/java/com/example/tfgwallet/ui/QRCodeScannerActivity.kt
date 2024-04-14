@@ -1,14 +1,17 @@
 package com.example.tfgwallet.ui
 
 import android.content.Context
+import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.util.Log
 import android.view.MenuItem
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import com.example.tfgwallet.control.Control
 import com.example.tfgwallet.databinding.ActivityQrscannerBinding
 import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanIntentResult
@@ -37,6 +40,12 @@ class QRCodeScannerActivity : AppCompatActivity() {
 
     private fun setRes(contents: String) {
         binding.textResult.text = contents
+        val preferences: SharedPreferences = getSharedPreferences("my_prefs", Context.MODE_PRIVATE)
+        val user = preferences.getString("user", "")
+        Log.i("User", user.toString())
+        if (user != null) {
+            Control.generateBrowserKeys(this, user, contents)
+        }
     }
     private fun showCamera() {
         val options = ScanOptions()

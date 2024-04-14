@@ -7,6 +7,23 @@
     android:background="@color/crypticPurple"
     tools:context=".ui.MainActivity">
 
+    <TextView
+        android:id="@+id/welcometitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="16dp"
+        android:text="@string/welcome"
+        android:textColor="#B39DDB"
+        android:textSize="48sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toTopOf="@+id/cardView"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/guideline2"
         android:layout_width="wrap_content"
@@ -29,33 +46,37 @@
 
             <EditText
                 android:id="@+id/username"
-                android:layout_width="220dp"
+                android:layout_width="250dp"
                 android:layout_height="50dp"
                 android:layout_marginTop="16dp"
-                android:drawableLeft="@drawable/baseline_person_24"
+                android:drawableStart="@drawable/baseline_person_24"
                 android:drawablePadding="6dp"
                 android:drawableTint="@color/colorPrimary"
                 android:ems="10"
                 android:hint="@string/prompt_username"
                 android:inputType="text"
+                android:textSize="20sp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
+                app:layout_constraintTop_toTopOf="parent"
+                android:autofillHints="emailAddress" />
 
             <EditText
                 android:id="@+id/password"
-                android:layout_width="220dp"
+                android:layout_width="250dp"
                 android:layout_height="50dp"
                 android:layout_marginTop="32dp"
-                android:drawableLeft="@drawable/baseline_lock_24"
+                android:drawableStart="@drawable/baseline_lock_24"
                 android:drawablePadding="6dp"
                 android:drawableTint="@color/colorPrimary"
                 android:ems="10"
                 android:hint="@string/prompt_password"
                 android:inputType="textPassword"
+                android:textSize="20sp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/username" />
+                app:layout_constraintTop_toBottomOf="@+id/username"
+                android:autofillHints="password" />
 
             <TextView
                 android:id="@+id/forgottenPass"
@@ -64,71 +85,23 @@
                 android:layout_marginTop="8dp"
                 android:text="Forgot password?"
                 android:textColor="@color/colorAccent"
+                android:textSize="20sp"
                 android:textStyle="bold"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/password" />
 
-            <CheckBox
-                android:id="@+id/checkBox"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:minHeight="48dp"
-                android:text="Enable 2AF in future accesses"
-                android:textColor="@color/colorPrimaryDark"
-                android:textSize="20sp"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintHorizontal_bias="0.498"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/forgottenPass" />
-
-            <LinearLayout
-                android:id="@+id/phoneLayout"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:orientation="horizontal"
-                android:visibility="gone"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/checkBox">
-
-                <com.hbb20.CountryCodePicker
-                    android:id="@+id/country_code"
-                    android:layout_width="96dp"
-                    android:layout_height="match_parent"
-                    android:layout_marginRight="2dp"
-                    android:gravity="center"
-                    app:ccp_autoDetectCountry="true"
-                    app:ccp_defaultNameCode="ES"
-                    app:ccp_showFlag="true"
-                    app:ccp_showFullName="true"
-                    app:ccp_showNameCode="true">
-
-                </com.hbb20.CountryCodePicker>
-
-                <EditText
-                    android:id="@+id/editTextPhone"
-                    android:layout_width="wrap_content"
-                    android:layout_height="match_parent"
-                    android:layout_marginLeft="2dp"
-                    android:ems="10"
-                    android:hint="@android:string/emptyPhoneNumber"
-                    android:inputType="phone"
-                    android:minHeight="48dp" />
-
-            </LinearLayout>
-
             <LinearLayout
                 android:id="@+id/linearLayout"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
+                android:layout_marginTop="24dp"
+                android:layout_marginBottom="24dp"
                 android:orientation="horizontal"
+                app:layout_constraintBottom_toTopOf="@+id/signUp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/phoneLayout">
+                app:layout_constraintTop_toBottomOf="@+id/forgottenPass">
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/logInButton"
@@ -140,7 +113,7 @@
                     android:text="LOG IN"
                     android:textAlignment="center"
                     android:textColor="@color/binaryWhite"
-                    android:textSize="22sp"
+                    android:textSize="34sp"
                     android:textStyle="bold"
                     app:cornerRadius="16dp" />
 
@@ -156,6 +129,7 @@
                 android:layout_marginBottom="49dp"
                 android:text="Don't have an account? Sign up!"
                 android:textColor="@color/colorPrimary"
+                android:textSize="20sp"
                 android:textStyle="bold"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
@@ -165,4 +139,5 @@
         </androidx.constraintlayout.widget.ConstraintLayout>
 
     </com.google.android.material.card.MaterialCardView>
+
 </androidx.constraintlayout.widget.ConstraintLayout>

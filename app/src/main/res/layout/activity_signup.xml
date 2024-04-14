@@ -7,6 +7,25 @@
     android:background="@color/crypticPurple"
     tools:context=".ui.MainActivity">
 
+    <TextView
+        android:id="@+id/signUpTitle"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="32dp"
+        android:layout_marginTop="32dp"
+        android:layout_marginEnd="32dp"
+        android:layout_marginBottom="32dp"
+        android:text="SIGN UP PAGE"
+        android:textAlignment="center"
+        android:textSize="34sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toTopOf="@+id/cardView"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.0" />
+
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/guideline2"
         android:layout_width="wrap_content"
@@ -32,7 +51,7 @@
                 android:layout_width="220dp"
                 android:layout_height="50dp"
                 android:layout_marginTop="16dp"
-                android:drawableLeft="@drawable/baseline_person_24"
+                android:drawableStart="@drawable/baseline_person_24"
                 android:drawablePadding="6dp"
                 android:drawableTint="@color/colorPrimary"
                 android:ems="10"
@@ -40,14 +59,15 @@
                 android:inputType="text"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
+                app:layout_constraintTop_toTopOf="parent"
+                android:autofillHints="emailAddress" />
 
             <EditText
                 android:id="@+id/password"
                 android:layout_width="220dp"
                 android:layout_height="50dp"
                 android:layout_marginTop="32dp"
-                android:drawableLeft="@drawable/baseline_lock_24"
+                android:drawableStart="@drawable/baseline_lock_24"
                 android:drawablePadding="6dp"
                 android:drawableTint="@color/colorPrimary"
                 android:ems="10"
@@ -57,14 +77,14 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/username"
                 app:passwordToggleEnabled="true"
-                />
+                android:autofillHints="password" />
 
             <CheckBox
                 android:id="@+id/checkBox"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:minHeight="48dp"
-                android:text="Enable 2AF in future accesses"
+                android:text="@string/enable_2af"
                 android:textColor="@color/colorPrimaryDark"
                 android:textSize="20sp"
                 app:layout_constraintEnd_toEndOf="parent"
@@ -73,51 +93,18 @@
                 app:layout_constraintTop_toBottomOf="@+id/password" />
 
             <LinearLayout
-                android:id="@+id/phoneLayout"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:orientation="horizontal"
-                android:visibility="gone"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/checkBox">
-
-                <com.hbb20.CountryCodePicker
-                    android:id="@+id/country_code"
-                    android:layout_width="96dp"
-                    android:layout_height="match_parent"
-                    android:layout_marginRight="2dp"
-                    android:gravity="center"
-                    app:ccp_autoDetectCountry="true"
-                    app:ccp_defaultNameCode="ES"
-                    app:ccp_showFlag="true"
-                    app:ccp_showFullName="true"
-                    app:ccp_showNameCode="true">
-
-                </com.hbb20.CountryCodePicker>
-
-                <EditText
-                    android:id="@+id/editTextPhone"
-                    android:layout_width="wrap_content"
-                    android:layout_height="match_parent"
-                    android:layout_marginLeft="2dp"
-                    android:ems="10"
-                    android:hint="@android:string/emptyPhoneNumber"
-                    android:inputType="phone"
-                    android:minHeight="48dp" />
-
-            </LinearLayout>
-
-            <LinearLayout
                 android:id="@+id/linearLayout"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="32dp"
+                android:layout_marginEnd="16dp"
+                android:layout_marginBottom="16dp"
                 android:orientation="horizontal"
+                app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/phoneLayout">
+                app:layout_constraintTop_toBottomOf="@+id/checkBox">
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/signUpButton"
@@ -139,22 +126,4 @@
 
     </com.google.android.material.card.MaterialCardView>
 
-    <TextView
-        android:id="@+id/signUpTitle"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:layout_marginStart="32dp"
-        android:layout_marginTop="32dp"
-        android:layout_marginEnd="32dp"
-        android:layout_marginBottom="32dp"
-        android:text="SIGN UP PAGE"
-        android:textAlignment="center"
-        android:textSize="24sp"
-        android:textStyle="bold"
-        app:layout_constraintBottom_toTopOf="@+id/cardView"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="1.0"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.0" />
 </androidx.constraintlayout.widget.ConstraintLayout>

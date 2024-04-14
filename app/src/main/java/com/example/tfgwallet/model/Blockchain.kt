@@ -4,6 +4,9 @@ import android.content.Context
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import android.util.Log
+import com.example.tfgwallet.SKM_SC.PPMWallet.src.EntitiesManager
+import com.example.tfgwallet.SKM_SC.PPMWallet.src.SKM_SC_Manager
+import com.example.tfgwallet.SKM_SC.PPMWallet.src.contracts.SKM_SC
 import org.bitcoinj.crypto.MnemonicCode
 import org.web3j.crypto.Bip32ECKeyPair
 import org.web3j.crypto.Credentials
@@ -11,6 +14,7 @@ import org.web3j.protocol.Web3j
 import org.web3j.protocol.http.HttpService
 import org.web3j.utils.Convert.Unit
 import org.web3j.tx.Transfer
+import org.web3j.tx.gas.StaticGasProvider
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
@@ -26,15 +30,29 @@ import javax.crypto.Cipher
 
 object Blockchain {
     lateinit var web3: Web3j
+    lateinit var gasProvider: StaticGasProvider
+    lateinit var entities: EntitiesManager
+    lateinit var skmSCManager: SKM_SC_Manager
+    lateinit var contract: SKM_SC
     fun connect(url: String) {
         try {
             web3 = Web3j.build(HttpService(url))
             Log.i("BC connection", "Successful connection to the blockchain.")
             Log.i("Ganache accounts", web3.ethAccounts().send().accounts.toString())
+            gasProvider =
+                StaticGasProvider(BigInteger.valueOf(27841746), BigInteger.valueOf(6721974))
 
+            entities =
+                EntitiesManager(this.web3.ethAccounts().send().accounts.toTypedArray(), this.web3)
+            skmSCManager = SKM_SC_Manager.getSKM_SC_Manager(this.web3, gasProvider)
         } catch (e: Exception) {
             Log.e("BC connection error", "Error connecting to the blockchain.${e.printStackTrace().toString()}")
         }
+    }
+
+    fun deploySKM_SC(): String {
+        contract = skmSCManager.newSKM_SC(entities.transactionManagerSmartphoneApp)
+        return contract.contractAddress
     }
 
     fun send(credentials: Credentials, recipientAddress: String, value: Long ) {
@@ -69,6 +87,9 @@ object Blockchain {
         return Bip32ECKeyPair.generateKeyPair(seed)
     }
 
+    fun generateBrowserKeyPair(keyPair: Bip32ECKeyPair, path: IntArray): Bip32ECKeyPair {
+        return Bip32ECKeyPair.deriveKeyPair(keyPair, path)
+    }
     private fun createDirectory(directoryPath: String): Boolean {
         try {
             val f = File(directoryPath)
@@ -154,6 +175,10 @@ object Blockchain {
 
         return Triple(privateKeyBigInt, publicKeyBigInt, chainCode)
 
+    }
+
+    fun addDevice(plugin: String) {
+        skmSCManager.addDevice(contract, plugin)
     }
 
 }
