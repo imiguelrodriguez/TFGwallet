@@ -10,6 +10,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentTransaction
 import com.example.tfgwallet.R
+import com.example.tfgwallet.control.Control
 import com.example.tfgwallet.databinding.ActivityHomeBinding
 import com.example.tfgwallet.model.Blockchain
 import com.example.tfgwallet.model.IPFSManager
@@ -17,6 +18,11 @@ import com.example.tfgwallet.ui.fragments.HomeFragment
 import com.example.tfgwallet.ui.fragments.KeysFragment
 import com.example.tfgwallet.ui.fragments.SettingsFragment
 import com.google.firebase.annotations.concurrent.Background
+import io.ipfs.kotlin.model.NamedHash
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.async
+import java.io.File
 import java.math.BigInteger
 
 
@@ -34,10 +40,6 @@ class HomeActivity : AppCompatActivity() {
             val email = intent.getStringExtra("email")
             if (email != null) {
                 val user = email.substringBefore("@")
-                val preferences = getSharedPreferences("my_prefs", Context.MODE_PRIVATE)
-                val editor = preferences.edit()
-                editor.putString("user", user)
-                editor.apply()
                 Log.i("Email", user)
                 val keyPair: Triple<BigInteger, BigInteger, ByteArray>? = Blockchain.decryptRsa("$user/login$user.bin", user,this)
                 if (keyPair != null) {
@@ -49,11 +51,10 @@ class HomeActivity : AppCompatActivity() {
         }
 
             replaceFragment(HomeFragment())
-
-        //val policy = ThreadPolicy.Builder().permitAll().build()
-
-        //StrictMode.setThreadPolicy(policy)
-        //connectToIPFS()
+        val context = this
+        GlobalScope.async(Dispatchers.IO) {
+            connectToIPFS(context)
+        }
 
         binding.bottomNavigationView.setOnItemSelectedListener {
             when(it.itemId) {
@@ -66,16 +67,32 @@ class HomeActivity : AppCompatActivity() {
             }
         }
     }
+    private suspend fun connectToIPFS(context: Context) {
+        val res = GlobalScope.async(Dispatchers.IO) {
+            val file: NamedHash
+            try {
+                IPFSManager.connect(context)
+                //val file = ipfsManager.addFile(File(assets.("english.txt")))
+                val string = IPFSManager.addString("test", "this is a test")
+                val recovered = IPFSManager.getString(string.Hash)
+                return@async Pair(string, recovered)
+                showAlert("SUCCESS", "${file.Name} with hash ${file.Hash}")
+            } catch (e: java.lang.Exception) {
+                return@async e
+                showAlert("ERROR", e.toString())
+            }
 
-    @Background
-    private fun connectToIPFS() {
-        try {
-            val ipfsManager = IPFSManager()
-            val file = ipfsManager.addFile("app/src/main/assets/english.txt")
-            showAlert("SUCCESS", "${file.Name} with hash ${file.Hash}")
-        } catch (e: java.lang.Exception) {
-            showAlert("ERROR", e.toString())
         }
+        val address = res.await()
+        if (address is Pair<*, *>){
+            val address2 = address as Pair<NamedHash, String>
+            runOnUiThread { showAlert("address", address2.first.Name + " " + address2.second)}
+        }
+        else {
+            runOnUiThread { showAlert("address", address.toString())}
+
+        }
+
     }
 
     override fun onBackPressed() {

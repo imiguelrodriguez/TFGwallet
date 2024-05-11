@@ -41,10 +41,11 @@ class QRCodeScannerActivity : AppCompatActivity() {
     private fun setRes(contents: String) {
         binding.textResult.text = contents
         val preferences: SharedPreferences = getSharedPreferences("my_prefs", Context.MODE_PRIVATE)
-        val user = preferences.getString("user", "")
+        var user = preferences.getString("lastLoggedInUserId", null)
         Log.i("User", user.toString())
         if (user != null) {
-            Control.generateBrowserKeys(this, user, contents)
+            user = user.substringBefore("@")
+            Control.generateBrowserKeys(this, user, contents, "user_$user")
         }
     }
     private fun showCamera() {

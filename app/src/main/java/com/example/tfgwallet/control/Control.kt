@@ -13,6 +13,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
+import org.web3j.crypto.Bip32ECKeyPair
 import org.web3j.crypto.Credentials
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
@@ -26,16 +27,21 @@ import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
 import javax.crypto.spec.GCMParameterSpec
 
-
+/**
+ * MVC: Controller for UI
+ * @author Ignacio Miguel Rodríguez
+ */
 class Control {
     companion object {
-        suspend fun deploySKM_SC(context: Context): String {
-            var contractAddress = ""
-            val IPaddress = getString(context, R.string.IP)
-            val bc = Blockchain
+        /**
+         * Method that calls the Blockchain.connect() method in an asynchronous way.
+         * @param context app context
+         * @param user String indicating the user logged in
+         */
+        suspend fun deploySKM_SC(context: Context, user: String): String {
+            val contractAddress: String
             val res = GlobalScope.async(Dispatchers.IO) {
-                bc.connect(IPaddress)
-                return@async bc.deploySKM_SC()
+                return@async Blockchain.deploySKM_SC(context, "user_$user")
             }
             contractAddress = res.await()
             return contractAddress
@@ -102,7 +108,7 @@ class Control {
         }
 
 
-        fun setUp(binding: ActivitySignupBinding, context: Context): String {
+        suspend fun setUp(binding: ActivitySignupBinding, context: Context): String {
             val mnemonicList = Blockchain.generateMnemonic()
 
             val mnemonic = mnemonicList.joinToString(separator = " ")
@@ -112,41 +118,42 @@ class Control {
             Blockchain.encryptRSA(masterKeyPair, user, context)
 
             val acc = Credentials.create(masterKeyPair)
-            val ganacheAcc = Credentials.create("0x6bb31d0829a07ada4a0198536266c45228bbbdac0789314a64faf12fc6dd4965")
-            GlobalScope.launch(Dispatchers.IO) {
-                val bc = Blockchain
-                bc.connect("http://192.168.0.105:7545")
-                bc.send(ganacheAcc, acc.address, 1)
+            Log.i("Address", acc.address)
+
+            val res = GlobalScope.async(Dispatchers.IO) {
+                Blockchain.sendUnlock(context, acc.address)
             }
-
-
+            res.await()
             return mnemonic
         }
 
         @OptIn(ExperimentalStdlibApi::class)
-        fun generateBrowserKeys(context: Context, user: String, contents: String) {
+        fun generateBrowserKeys(context: Context, user: String, contents: String, prefs_name: String) {
             val keyPair: Triple<BigInteger, BigInteger, ByteArray>? = Blockchain.decryptRsa("$user/login$user.bin", user, context)
             if (keyPair != null) {
                 Log.i("Key", "Your private key is ${keyPair.first} and public key is ${keyPair.second}")
                 Log.i("Chain code", "Your chain code is ${BigInteger(keyPair.third)}")
             }
+            else{
+                Log.i("prob", "problem with key")
+            }
             var id = contents.takeLast(64)
-            /*if (keyPair != null) {
-                val path: IntArray
+            if (keyPair != null) {
+                val path = intArrayOf(id.substring(0, 8).hexToInt(HexFormat.Default) or Bip32ECKeyPair.HARDENED_BIT)
                 try {
-                    val path = id.hexToInt(HexFormat.Default)
-                } catch (exception: Exception) {
-                    val path = IntArray(1)
-                }
-
-                try {
-                    val brKeyPair = Blockchain.generateBrowserKeyPair(Bip32ECKeyPair.create(keyPair.first, keyPair.third), path)
+                    val master = Bip32ECKeyPair.create(keyPair.first, keyPair.third)
+                    val brKeyPair = Blockchain.generateBrowserKeyPair(master, path)
                     Log.i("Browser Key", "Private key is ${brKeyPair.privateKey}")
-                   // Blockchain.addDevice(brKeyPair.publicKey.toString())
+                    Log.i("Key size", "Private ${brKeyPair.privateKey.toByteArray().size}  Public ${brKeyPair.publicKey.toByteArray().size}")
+                    val from = Credentials.create(master)
+                    Log.i("Address", from.address)
+                    GlobalScope.launch(Dispatchers.IO) {
+                        Blockchain.addDevice(from, brKeyPair, context, prefs_name)
+                    }
                 } catch (e: Exception) {
                     Log.e("Error", e.toString())
                 }
-            }*/
+            }
 
         }
     }

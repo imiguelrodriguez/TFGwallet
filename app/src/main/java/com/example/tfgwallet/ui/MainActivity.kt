@@ -4,16 +4,19 @@ import android.content.Context
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.preference.PreferenceManager
 import android.util.Log
-import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
+import androidx.biometric.BiometricManager
 import androidx.core.content.ContextCompat
 import com.example.tfgwallet.databinding.ActivityLoginBinding
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
 
+/**
+ * Main activity for the wallet app. It represents the log-in page.
+ * @author Ignacio Miguel Rodríguez
+ */
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityLoginBinding
 
@@ -24,31 +27,46 @@ class MainActivity : AppCompatActivity() {
         setContentView(view)
         FirebaseApp.initializeApp(this)
         setup(binding)
-
     }
 
-    fun setLastLoggedInUserId(context: Context, userId: String) {
-        val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
-        val editor = sharedPreferences.edit()
-        editor.putString("lastLoggedInUserId", userId)
-        editor.apply()
+    /**
+     * Method that sets the last user logged in into the Shared Preferences
+     * @param context app context
+     * @param userId String indicating the username (e.g. if email is example@gmail.com, username would be example)
+     */
+    private fun setLastLoggedInUserId(context: Context, userId: String) {
+        context.getSharedPreferences("my_prefs", Context.MODE_PRIVATE).edit().putString("lastLoggedInUserId", userId).apply()
     }
 
-    // Retrieve the last logged-in user ID
+    /**
+     * Method that retrieves the last user logged from the Shared Preferences
+     * @param context app context
+     * @return String indicating the username, null if the field does not exist
+     */
     private fun getLastLoggedInUserId(context: Context): String? {
-        val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
-        return sharedPreferences.getString("lastLoggedInUserId", null)
+        return context.getSharedPreferences("my_prefs", Context.MODE_PRIVATE).getString("lastLoggedInUserId", null)
     }
 
+    /**
+     * Method that retrieves if the given user is logged-in from the Shared Preferences
+     * @param context app context
+     * @param userId String indicating the username
+     * @return true if logged-in, false otherwise (note that if that entry does not exist, false will also be returned)
+     */
     private fun isLoggedIn(context: Context, userId: String): Boolean {
-        val sharedPreferences = context.getSharedPreferences("user_$userId", Context.MODE_PRIVATE)
-        Log.i("reading pref", "$userId ${sharedPreferences.all.toString()}")
-        return sharedPreferences.getBoolean("isLoggedIn", false)
+        return context.getSharedPreferences("user_$userId", Context.MODE_PRIVATE).getBoolean("isLoggedIn", false)
     }
+
+    /**
+     * Method that retrieves if the 2AF is enabled for given user from the Shared Preferences
+     * @param context app context
+     * @param userId String indicating the username
+     * @return true if the 2AF is enabled, false otherwise (note that if that entry does not exist, false will also be returned)
+     */
     private fun isTwoFactorAuthEnabled(context: Context, userId: String): Boolean {
-        val sharedPreferences = context.getSharedPreferences("user_$userId", Context.MODE_PRIVATE)
-        return sharedPreferences.getBoolean("isTwoFactorAuthEnabled", false)
+        return context.getSharedPreferences("user_$userId", Context.MODE_PRIVATE).getBoolean("isTwoFactorAuthEnabled", false)
     }
+
     private fun setup(binding: ActivityLoginBinding) {
         val lastLoggedInUserId = getLastLoggedInUserId(this)
 
@@ -85,11 +103,21 @@ class MainActivity : AppCompatActivity() {
                             Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK
 
                         if (isTwoFactorAuthEnabled(this, user)) {
-                            askForTwoFactorAuth()
+                            askForTwoFactorAuth { isAuthenticated ->
+                               val auth = isAuthenticated as Boolean
+                               if (auth) {
+                                   setLastLoggedInUserId(this, binding.username.text.toString())
+                                   startActivity(homeIntent)
+                                   finish()
+                               }
+                           }
                         }
-                        setLastLoggedInUserId(this, binding.username.text.toString())
-                        startActivity(homeIntent)
-                        finish()
+                        else {
+                            setLastLoggedInUserId(this, binding.username.text.toString())
+                            startActivity(homeIntent)
+                            finish()
+                        }
+
                     } else {
                         showAlert("Error", "Problem signing in for user ${binding.username.text}")
                     }
@@ -109,7 +137,11 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun askForTwoFactorAuth() {
+    /**
+     * Method that asks for the 2AF (e.g. fingerprint or device PIN).
+     * @return true if the authentication has been completed successfully, false otherwise
+     */
+    private fun askForTwoFactorAuth(callback: (Boolean) -> Unit) {
         val executor = ContextCompat.getMainExecutor(this)
         val biometricPrompt = androidx.biometric.BiometricPrompt(this, executor,
             object: androidx.biometric.BiometricPrompt.AuthenticationCallback() {
@@ -123,6 +155,7 @@ class MainActivity : AppCompatActivity() {
                         "Authentication error: $errString", Toast.LENGTH_SHORT
                     )
                         .show()
+                    callback(false)
                 }
 
                 override fun onAuthenticationSucceeded(result: androidx.biometric.BiometricPrompt.AuthenticationResult) {
@@ -132,6 +165,7 @@ class MainActivity : AppCompatActivity() {
                         "Authentication succeeded!", Toast.LENGTH_SHORT
                     )
                         .show()
+                    callback(true)
                 }
 
                 override fun onAuthenticationFailed() {
@@ -141,20 +175,17 @@ class MainActivity : AppCompatActivity() {
                         Toast.LENGTH_SHORT
                     )
                         .show()
+                    callback(false)
                 }
             })
 
         val promptInfo = androidx.biometric.BiometricPrompt.PromptInfo.Builder()
-            .setTitle("Biometric login for my app")
+            .setTitle("Biometric login")
             .setSubtitle("Log in using your biometric credential")
-            .setNegativeButtonText("Use account password")
+            .setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_STRONG or BiometricManager.Authenticators.DEVICE_CREDENTIAL)
             .build()
 
-        // Prompt appears when user clicks "Log in".
-        // Consider integrating with the keystore to unlock cryptographic operations,
-        // if needed by your app.
-
-        val res = biometricPrompt.authenticate(promptInfo)
+         biometricPrompt.authenticate(promptInfo)
 
     }
 

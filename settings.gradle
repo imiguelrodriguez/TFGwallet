@@ -10,7 +10,13 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
-        maven { url 'https://jitpack.io' }
+        maven { url 'https://jitpack.io'
+
+            }
+        maven {
+            url "https://artifacts.consensys.net/public/maven/maven/"
+        }
+
     }
 }
 rootProject.name = "TFGwallet"

@@ -17,7 +17,7 @@
         android:layout_marginBottom="32dp"
         android:text="SIGN UP PAGE"
         android:textAlignment="center"
-        android:textSize="34sp"
+        android:textSize="40sp"
         android:textStyle="bold"
         app:layout_constraintBottom_toTopOf="@+id/cardView"
         app:layout_constraintEnd_toEndOf="parent"
@@ -48,79 +48,73 @@
 
             <EditText
                 android:id="@+id/username"
-                android:layout_width="220dp"
+                android:layout_width="250dp"
                 android:layout_height="50dp"
                 android:layout_marginTop="16dp"
+                android:autofillHints="emailAddress"
                 android:drawableStart="@drawable/baseline_person_24"
                 android:drawablePadding="6dp"
                 android:drawableTint="@color/colorPrimary"
                 android:ems="10"
                 android:hint="@string/prompt_username"
                 android:inputType="text"
+                android:textSize="20sp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
-                android:autofillHints="emailAddress" />
+                app:layout_constraintTop_toTopOf="parent" />
 
             <EditText
                 android:id="@+id/password"
-                android:layout_width="220dp"
+                android:layout_width="250dp"
                 android:layout_height="50dp"
                 android:layout_marginTop="32dp"
+                android:autofillHints="password"
                 android:drawableStart="@drawable/baseline_lock_24"
                 android:drawablePadding="6dp"
                 android:drawableTint="@color/colorPrimary"
                 android:ems="10"
                 android:hint="@string/prompt_password"
                 android:inputType="textPassword"
+                android:textSize="20sp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/username"
-                app:passwordToggleEnabled="true"
-                android:autofillHints="password" />
+                app:passwordToggleEnabled="true" />
 
             <CheckBox
                 android:id="@+id/checkBox"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_marginTop="24dp"
+                android:layout_marginEnd="8dp"
                 android:minHeight="48dp"
                 android:text="@string/enable_2af"
                 android:textColor="@color/colorPrimaryDark"
-                android:textSize="20sp"
+                android:textSize="22sp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintHorizontal_bias="0.498"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/password" />
 
-            <LinearLayout
-                android:id="@+id/linearLayout"
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/signUpButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="16dp"
-                android:layout_marginTop="32dp"
-                android:layout_marginEnd="16dp"
-                android:layout_marginBottom="16dp"
-                android:orientation="horizontal"
+                android:layout_marginStart="24dp"
+                android:layout_marginTop="24dp"
+                android:layout_marginEnd="24dp"
+                android:backgroundTint="@color/crypticPurple"
+                android:text="SIGN UP"
+                android:textAlignment="center"
+                android:textColor="@color/binaryWhite"
+                android:textSize="34sp"
+                android:textStyle="bold"
+                app:cornerRadius="16dp"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/checkBox">
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/signUpButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginLeft="16dp"
-                    android:layout_marginRight="16dp"
-                    android:backgroundTint="@color/crypticPurple"
-                    android:text="SIGN UP"
-                    android:textAlignment="center"
-                    android:textColor="@color/binaryWhite"
-                    android:textSize="22sp"
-                    android:textStyle="bold"
-                    app:cornerRadius="16dp" />
-
-            </LinearLayout>
+                app:layout_constraintTop_toBottomOf="@+id/checkBox" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
 

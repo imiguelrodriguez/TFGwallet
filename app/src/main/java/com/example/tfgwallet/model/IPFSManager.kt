@@ -1,25 +1,33 @@
 package com.example.tfgwallet.model
 
+import android.content.Context
+import androidx.core.content.ContextCompat
+import com.example.tfgwallet.R
 import io.ipfs.kotlin.IPFS
 import io.ipfs.kotlin.IPFSConfiguration
 import io.ipfs.kotlin.model.NamedHash
 import java.io.File
 
 
+object IPFSManager  {
+    private lateinit var manager: IPFS
 
-class IPFSManager  {
-    private var manager: IPFS
-    init {
-        manager = IPFS(IPFSConfiguration(base_url = "http://192.168.100.33:5001/api/v0/"))
-
+    fun connect(context: Context) {
+        manager = IPFS(IPFSConfiguration(base_url = ContextCompat.getString(context, R.string.IPFS_IP)))
     }
     fun addFile(name: String): NamedHash {
         return manager.add.file(File(name), name)
     }
 
+    fun addString(name: String, text: String): NamedHash {
+        return manager.add.string(text, name)
+    }
+    fun getString(hash: String): String {
+        return manager.get.cat(hash)
+    }
 
 }
-
+/*
 fun main() {
     val currentDir = System.getProperty("user.dir")
     println("Current working directory: $currentDir")
@@ -29,4 +37,4 @@ fun main() {
     println(ipfs.get.cat("QmboH69rqqevyHjtPp4d8ujvAMHZCCc7KEu4AEds9EHspx"))
     println(ipfs.get.cat("QmWr7iqiych7ZMYjiQDuSwDFrRNuNdWxKVzwSxwbaAmeXV"))
 
-}
+}*/

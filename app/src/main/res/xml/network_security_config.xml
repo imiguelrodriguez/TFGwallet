@@ -2,5 +2,9 @@
 <network-security-config>
     <domain-config cleartextTrafficPermitted="true">
         <domain includeSubdomains="true">192.168.100.31</domain>
+        <domain includeSubdomains="true">192.168.1.137</domain>
+        <domain includeSubdomains="true">192.168.0.103</domain>
+        <domain includeSubdomains="true">192.168.0.108</domain>
+        <domain includeSubdomains="true">rpc.sepolia.org</domain>
     </domain-config>
 </network-security-config>

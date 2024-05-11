@@ -15,7 +15,7 @@ import kotlinx.coroutines.async
 
 class SignUpActivity : AppCompatActivity() {
     private lateinit var binding: ActivitySignupBinding
-
+    private lateinit var user: String
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivitySignupBinding.inflate(layoutInflater)
@@ -23,24 +23,25 @@ class SignUpActivity : AppCompatActivity() {
         setContentView(view)
         FirebaseApp.initializeApp(this)
         setup(binding)
-
     }
 
     private fun setup(binding: ActivitySignupBinding) {
 
         binding.signUpButton.setOnClickListener {
             if (binding.username.text.isNotEmpty() && binding.password.text.isNotEmpty()) {
+                val loading = LoadingAlert(this, "Creating account...")
+                loading.startAlertDialog()
                 FirebaseAuth.getInstance().createUserWithEmailAndPassword(binding.username.text.toString(),
                     binding.password.text.toString()).addOnCompleteListener {
                     if (it.isSuccessful) {
-                        val userPreferences = getSharedPreferences("user_${binding.username.text.toString().substringBefore("@")}", Context.MODE_PRIVATE)
+                        user = binding.username.text.toString().substringBefore("@")
+                        val userPreferences = getSharedPreferences("user_$user", Context.MODE_PRIVATE)
                         userPreferences.edit().putBoolean("isTwoFactorAuthEnabled", binding.checkBox.isChecked).apply()
-
+                        loading.closeAlertDialog()
                         showAlert("Success!","User ${it.result.user?.email} has been registered successfully.")
-                        GlobalScope.async(Dispatchers.IO) {
-                            deploySC()
-                        }
+
                     } else {
+                        loading.closeAlertDialog()
                         showAlert("Error","An error has occurred while trying to sign up.")
                     }
                 }
@@ -49,41 +50,44 @@ class SignUpActivity : AppCompatActivity() {
 
     }
 
-    private suspend fun deploySC() {
+    private suspend fun deploySC(user: String) {
         val context = this
+        val loading = LoadingAlert(this, "Generating Smart Contract...")
+        runOnUiThread { loading.startAlertDialog() }
         val res = GlobalScope.async(Dispatchers.IO) {
-            return@async Control.deploySKM_SC(context)
+            return@async Control.deploySKM_SC(context, user)
         }
         val address = res.await()
-        runOnUiThread { showAlert("address", address) }
+
+        runOnUiThread { loading.closeAlertDialog()
+            showAlert("address", address) }
     }
     private fun showAlert(title: String, message: String) {
         val builder = AlertDialog.Builder(this)
         builder.setTitle(title)
         builder.setMessage(message)
         builder.setPositiveButton("Accept", null)
-        if (title == "Success!") builder.setOnDismissListener{setUpKeysLib()}
+        if (title == "Success!") builder.setOnDismissListener{ GlobalScope.async(Dispatchers.IO) {
+            setUpKeysLib()
+        }}
         val dialog: AlertDialog = builder.create()
         dialog.show()
         if (title == "Mnemonic words") dialog.setOnDismissListener { GlobalScope.async(Dispatchers.IO) {
-            deploySC()
+            deploySC(user)
         } }
         if(title == "address") dialog.setOnDismissListener{finish()}
     }
 
-    private fun setUpKeys() {
-        val bip39 = Control.executeBIP39(128, binding.password.text.toString(), this)
-        showAlert("Mnemonic words", "These are your mnemonic words, please store them safely.\n\n" +
-                bip39.first)
-
-        // You can continue your sequential logic here
-        val bip32 = Control.executeBIP32(bip39.second)
-        Control.storeKeys(bip32)
-    }
-
-    fun setUpKeysLib() {
+    private suspend fun setUpKeysLib() {
+        val loading = LoadingAlert(this, "Generating keys, wait for your mnemonics...")
+        runOnUiThread {
+             loading.startAlertDialog()
+        }
         val mnemonic = Control.setUp(binding, this)
-        showAlert("Mnemonic words", "These are your mnemonic words, please store them safely.\n" +
-                "\n $mnemonic")
+        runOnUiThread {
+
+            loading.closeAlertDialog()
+            showAlert("Mnemonic words", "These are your mnemonic words, please store them safely.\n" +
+                "\n $mnemonic")}
     }
 }
