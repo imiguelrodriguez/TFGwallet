@@ -14,6 +14,7 @@ import com.example.tfgwallet.control.Control
 import com.example.tfgwallet.databinding.ActivityHomeBinding
 import com.example.tfgwallet.model.Blockchain
 import com.example.tfgwallet.model.IPFSManager
+import com.example.tfgwallet.model.KeyManagement
 import com.example.tfgwallet.ui.fragments.HomeFragment
 import com.example.tfgwallet.ui.fragments.KeysFragment
 import com.example.tfgwallet.ui.fragments.SettingsFragment
@@ -41,7 +42,7 @@ class HomeActivity : AppCompatActivity() {
             if (email != null) {
                 val user = email.substringBefore("@")
                 Log.i("Email", user)
-                val keyPair: Triple<BigInteger, BigInteger, ByteArray>? = Blockchain.decryptRsa("$user/login$user.bin", user,this)
+                val keyPair: Triple<BigInteger, BigInteger, ByteArray>? = KeyManagement.decryptRsa("$user/login$user.bin", user,this)
                 if (keyPair != null) {
                     Log.i("Key", "Your private key is ${keyPair.first} and public key is ${keyPair.second}")
                     Log.i("Chain code", "Your chain code is ${BigInteger(keyPair.third)}")
@@ -75,7 +76,8 @@ class HomeActivity : AppCompatActivity() {
                 //val file = ipfsManager.addFile(File(assets.("english.txt")))
                 val string = IPFSManager.addString("test", "this is a test")
                 val recovered = IPFSManager.getString(string.Hash)
-                return@async Pair(string, recovered)
+                val recovered2 = IPFSManager.getString("bafkreife2klsil6kaxqhvmhgldpsvk5yutzm4i5bgjoq6fydefwtihnesa")
+                return@async Pair(string, recovered + recovered2)
                 showAlert("SUCCESS", "${file.Name} with hash ${file.Hash}")
             } catch (e: java.lang.Exception) {
                 return@async e

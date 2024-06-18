@@ -7,7 +7,7 @@ import com.example.tfgwallet.R
 import com.example.tfgwallet.databinding.LoadingLayoutBinding
 
 
-class LoadingAlert(myActivity: SignUpActivity, text: String){
+class LoadingAlert(myActivity: Activity, text: String){
     private var activity: Activity
     private lateinit var dialog: AlertDialog
     private var text: String

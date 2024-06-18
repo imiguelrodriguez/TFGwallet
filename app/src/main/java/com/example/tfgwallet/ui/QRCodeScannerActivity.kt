@@ -16,6 +16,9 @@ import com.example.tfgwallet.databinding.ActivityQrscannerBinding
 import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanIntentResult
 import com.journeyapps.barcodescanner.ScanOptions
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.async
 
 class QRCodeScannerActivity : AppCompatActivity() {
     private lateinit var binding: ActivityQrscannerBinding
@@ -34,19 +37,25 @@ class QRCodeScannerActivity : AppCompatActivity() {
         if (result.contents == null) {
             Toast.makeText(this, "Cancelled", Toast.LENGTH_SHORT).show()
         } else {
-            setRes(result.contents)
+            GlobalScope.async(Dispatchers.IO) {
+                setRes(result.contents)
+            }
         }
     }
 
-    private fun setRes(contents: String) {
-        binding.textResult.text = contents
+    private suspend fun setRes(contents: String) {
+        val loading = LoadingAlert(this, "Adding device to Smart Contract...")
+        runOnUiThread { loading.startAlertDialog() }
         val preferences: SharedPreferences = getSharedPreferences("my_prefs", Context.MODE_PRIVATE)
         var user = preferences.getString("lastLoggedInUserId", null)
         Log.i("User", user.toString())
+        var status = ""
         if (user != null) {
             user = user.substringBefore("@")
-            Control.generateBrowserKeys(this, user, contents, "user_$user")
+            status = Control.generateBrowserKeys(this, user, contents, "user_$user")
         }
+        runOnUiThread { loading.closeAlertDialog() }
+        binding.textResult.text = "$status"
     }
     private fun showCamera() {
         val options = ScanOptions()

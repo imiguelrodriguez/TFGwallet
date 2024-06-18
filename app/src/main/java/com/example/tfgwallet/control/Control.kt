@@ -8,6 +8,7 @@ import androidx.core.content.ContextCompat.getString
 import com.example.tfgwallet.R
 import com.example.tfgwallet.databinding.ActivitySignupBinding
 import com.example.tfgwallet.model.Blockchain
+import com.example.tfgwallet.model.KeyManagement
 import com.example.tfgwallet.model.Protocols
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
@@ -109,52 +110,61 @@ class Control {
 
 
         suspend fun setUp(binding: ActivitySignupBinding, context: Context): String {
-            val mnemonicList = Blockchain.generateMnemonic()
+            val mnemonicList = KeyManagement.generateMnemonic()
 
             val mnemonic = mnemonicList.joinToString(separator = " ")
-            val masterKeyPair = Blockchain.generateKeyPair(mnemonicList, binding.password.text.toString())
+            val masterKeyPair = KeyManagement.generateKeyPair(mnemonicList, binding.password.text.toString())
 
             val user = binding.username.text.toString().substringBefore("@")
-            Blockchain.encryptRSA(masterKeyPair, user, context)
+            KeyManagement.encryptRSA(masterKeyPair, user, context)
 
             val acc = Credentials.create(masterKeyPair)
             Log.i("Address", acc.address)
 
             val res = GlobalScope.async(Dispatchers.IO) {
-                Blockchain.sendUnlock(context, acc.address)
+                Blockchain.send(context, acc.address)
             }
             res.await()
             return mnemonic
         }
 
         @OptIn(ExperimentalStdlibApi::class)
-        fun generateBrowserKeys(context: Context, user: String, contents: String, prefs_name: String) {
-            val keyPair: Triple<BigInteger, BigInteger, ByteArray>? = Blockchain.decryptRsa("$user/login$user.bin", user, context)
+        suspend fun generateBrowserKeys(context: Context, user: String, contents: String, prefs_name: String): String {
+            val keyPair: Triple<BigInteger, BigInteger, ByteArray>? = KeyManagement.decryptRsa("$user/login$user.bin", user, context)
             if (keyPair != null) {
+                var id = contents.takeLast(64)
                 Log.i("Key", "Your private key is ${keyPair.first} and public key is ${keyPair.second}")
                 Log.i("Chain code", "Your chain code is ${BigInteger(keyPair.third)}")
-            }
-            else{
-                Log.i("prob", "problem with key")
-            }
-            var id = contents.takeLast(64)
-            if (keyPair != null) {
                 val path = intArrayOf(id.substring(0, 8).hexToInt(HexFormat.Default) or Bip32ECKeyPair.HARDENED_BIT)
+                val sessionKey = contents.take(contents.length - 64).hexToByteArray()
                 try {
                     val master = Bip32ECKeyPair.create(keyPair.first, keyPair.third)
-                    val brKeyPair = Blockchain.generateBrowserKeyPair(master, path)
+                    val brKeyPair = KeyManagement.generateBrowserKeyPair(master, path)
                     Log.i("Browser Key", "Private key is ${brKeyPair.privateKey}")
                     Log.i("Key size", "Private ${brKeyPair.privateKey.toByteArray().size}  Public ${brKeyPair.publicKey.toByteArray().size}")
                     val from = Credentials.create(master)
                     Log.i("Address", from.address)
-                    GlobalScope.launch(Dispatchers.IO) {
-                        Blockchain.addDevice(from, brKeyPair, context, prefs_name)
+                    var status = ""
+                    val res = GlobalScope.async(Dispatchers.IO) {
+                        status = Blockchain.addDevice(from, brKeyPair, context, prefs_name).toString()
+                        //  removed +id.hexToByteArray() + ByteArray(64) to the output of encryption
+                        val encrypted = KeyManagement.encryptWithSessionKey(brKeyPair, sessionKey)
+                        val hexEnc = encrypted.toHexString(HexFormat.Default)
+                        Blockchain.modTemp(from, encrypted, context, prefs_name)
                     }
+                    res.await()
+                    return status
                 } catch (e: Exception) {
                     Log.e("Error", e.toString())
+                    return "Error"
                 }
             }
-
+            else{
+                Log.i("Problem", "problem with key")
+                return "Error"
+            }
         }
+
+
     }
 }
