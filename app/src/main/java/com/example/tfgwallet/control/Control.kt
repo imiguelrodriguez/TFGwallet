@@ -149,7 +149,6 @@ class Control {
                         status = Blockchain.addDevice(from, brKeyPair, context, prefs_name).toString()
                         //  removed +id.hexToByteArray() + ByteArray(64) to the output of encryption
                         val encrypted = KeyManagement.encryptWithSessionKey(brKeyPair, sessionKey)
-                        val hexEnc = encrypted.toHexString(HexFormat.Default)
                         Blockchain.modTemp(from, encrypted, context, prefs_name)
                     }
                     res.await()

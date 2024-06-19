@@ -1,34 +1,35 @@
 package com.example.tfgwallet.ui.fragments
 
+import android.content.Context
 import android.os.Bundle
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import com.example.tfgwallet.R
+import androidx.fragment.app.Fragment
+import androidx.recyclerview.widget.LinearLayoutManager
+import com.example.tfgwallet.databinding.FragmentKeysBinding
+import com.example.tfgwallet.model.MasterKeyItem
+import com.example.tfgwallet.ui.MasterKeyItemAdapter
 
-
-// TODO: Rename parameter arguments, choose names that match
-// the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-private const val ARG_PARAM1 = "param1"
-private const val ARG_PARAM2 = "param2"
-
-/**
- * A simple [Fragment] subclass.
- * Use the [ProfileFragment.newInstance] factory method to
- * create an instance of this fragment.
- */
+private const val ARG_PARAM1 = "user"
+private const val ARG_PARAM2 = "privKey"
+private const val ARG_PARAM3 = "pubKey"
+private const val ARG_PARAM4 = "chainCode"
 class KeysFragment : Fragment() {
-    // TODO: Rename and change types of parameters
-    private var param1: String? = null
-    private var param2: String? = null
+    private var user: String = ""
+    private var pubKey: String = ""
+    private var privKey: String = ""
+    private var chainCode: String = ""
+    private lateinit var mAdapter: MasterKeyItemAdapter
+    private lateinit var binding: FragmentKeysBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         arguments?.let {
-            param1 = it.getString(ARG_PARAM1)
-            param2 = it.getString(ARG_PARAM2)
+            user = it.getString(ARG_PARAM1).toString()
+            privKey = it.getString(ARG_PARAM2).toString()
+            pubKey = it.getString(ARG_PARAM3).toString()
+            chainCode = it.getString(ARG_PARAM4).toString()
         }
     }
 
@@ -36,29 +37,38 @@ class KeysFragment : Fragment() {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_keys, container, false)
+        binding = FragmentKeysBinding.inflate(inflater, container, false)
+        setKeysDataAdapter()
+        setupRecyclerView()
+        // Inflate the layout for this fragment using data binding
+        return binding.root
+    }
+
+    private fun setupRecyclerView() {
+        val recyclerView = binding.masterRecycler
+        recyclerView.layoutManager = LinearLayoutManager(context, LinearLayoutManager.VERTICAL, false)
+        recyclerView.adapter = mAdapter
+    }
+
+    private fun setKeysDataAdapter() {
+        val keys: MutableList<MasterKeyItem> = ArrayList()
+        val scHash = context?.getSharedPreferences("user_$user", Context.MODE_PRIVATE)
+            ?.getString("user_${user}_contract", "").toString()
+        keys.add(MasterKeyItem("0x$privKey", "0x$pubKey", "0x$chainCode", scHash))
+        binding.masterNoKeys.visibility = View.INVISIBLE
+        mAdapter = MasterKeyItemAdapter(keys)
     }
 
     companion object {
-        /**
-         * Use this factory method to create a new instance of
-         * this fragment using the provided parameters.
-         *
-         * @param param1 Parameter 1.
-         * @param param2 Parameter 2.
-         * @return A new instance of fragment ProfileFragment.
-         */
-        // TODO: Rename and change types and number of parameters
         @JvmStatic
-        fun newInstance(param1: String, param2: String) =
+        fun newInstance(param1: String, param2: String, param3: String, param4: String) =
             KeysFragment().apply {
                 arguments = Bundle().apply {
                     putString(ARG_PARAM1, param1)
                     putString(ARG_PARAM2, param2)
+                    putString(ARG_PARAM3, param3)
+                    putString(ARG_PARAM4, param4)
                 }
             }
     }
-
-
 }

@@ -6,12 +6,11 @@
     tools:context=".ui.fragments.SettingsFragment"
     android:background="@color/cardview_light_background">
 
-    <!-- TODO: Update blank fragment layout -->
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Settings fragment"
-        android:textSize="26dp"
+        android:textSize="26sp"
         android:layout_gravity="center" />
 
 </FrameLayout>

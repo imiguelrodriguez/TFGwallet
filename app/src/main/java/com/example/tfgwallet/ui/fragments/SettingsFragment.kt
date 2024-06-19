@@ -9,17 +9,15 @@ import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.SwitchPreferenceCompat
 import com.example.tfgwallet.R
 
-
+private const val ARG_PARAM1 = "user"
 class SettingsFragment : PreferenceFragmentCompat() {
+    private var user: String = ""
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         setPreferencesFromResource(R.xml.preferences, rootKey)
-
-        val twoaf = findPreference<SwitchPreferenceCompat>("2af")
-        val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
-        val user = sharedPreferences.getString("lastLoggedInUserId", null)?.substringBefore("@")
-        if (user != null) {
-            Log.i("user", user)
+        arguments?.let {
+            user = it.getString(ARG_PARAM1).toString()
         }
+        val twoaf = findPreference<SwitchPreferenceCompat>("2af")
         val userPreferences = context?.getSharedPreferences("user_$user", Context.MODE_PRIVATE)
         twoaf?.isChecked = userPreferences?.getBoolean("isTwoFactorAuthEnabled", false) == true
 
@@ -40,5 +38,13 @@ class SettingsFragment : PreferenceFragmentCompat() {
 
 
     }
-
+    companion object {
+        @JvmStatic
+        fun newInstance(param1: String) =
+            SettingsFragment().apply {
+                arguments = Bundle().apply {
+                    putString(ARG_PARAM1, param1)
+                }
+            }
+    }
 }

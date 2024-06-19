@@ -30,19 +30,24 @@ import java.math.BigInteger
 class HomeActivity : AppCompatActivity() {
     private lateinit var binding: ActivityHomeBinding
 
+    @OptIn(ExperimentalStdlibApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         binding = ActivityHomeBinding.inflate(layoutInflater)
         val view = binding.root
         setContentView(view)
         val intent = intent
-
+        var user = ""
+        var keyPair : Triple<BigInteger, BigInteger, ByteArray> = Triple(BigInteger.ZERO,
+            BigInteger.ZERO, byteArrayOf(0)
+        )
         if (intent.hasExtra("email")) {
             val email = intent.getStringExtra("email")
             if (email != null) {
-                val user = email.substringBefore("@")
+                user = email.substringBefore("@")
                 Log.i("Email", user)
-                val keyPair: Triple<BigInteger, BigInteger, ByteArray>? = KeyManagement.decryptRsa("$user/login$user.bin", user,this)
+                keyPair = KeyManagement.decryptRsa("$user/login$user.bin", user,this)!!
                 if (keyPair != null) {
                     Log.i("Key", "Your private key is ${keyPair.first} and public key is ${keyPair.second}")
                     Log.i("Chain code", "Your chain code is ${BigInteger(keyPair.third)}")
@@ -60,8 +65,9 @@ class HomeActivity : AppCompatActivity() {
         binding.bottomNavigationView.setOnItemSelectedListener {
             when(it.itemId) {
                 R.id.home -> replaceFragment(HomeFragment())
-                R.id.settings -> replaceFragment(SettingsFragment())
-                R.id.keys -> replaceFragment(KeysFragment())
+                R.id.settings -> replaceFragment(SettingsFragment.newInstance(user))
+                R.id.keys -> replaceFragment(KeysFragment.newInstance(user, keyPair.first.toString(16), keyPair.second.toString(16), keyPair.third.toHexString(
+                    HexFormat.Default)))
                 else -> {
                     true
                 }
