@@ -27,6 +27,38 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent">
 
+            <EditText
+                android:id="@+id/username"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:drawableLeft="@drawable/baseline_person_24"
+                android:drawablePadding="6dp"
+                android:drawableTint="@color/colorPrimary"
+                android:ems="10"
+                android:textSize="20sp"
+                android:hint="@string/prompt_username"
+                android:inputType="text"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <EditText
+                android:id="@+id/newpass"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:autofillHints="password"
+                android:drawableStart="@drawable/baseline_lock_24"
+                android:drawablePadding="6dp"
+                android:drawableTint="@color/colorPrimary"
+                android:hint="New password"
+                android:textSize="20sp"
+                android:ems="10"
+                app:layout_constraintBottom_toTopOf="@id/recoverButton"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/username" />
+
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/recoverButton"
                 android:layout_width="wrap_content"
@@ -45,22 +77,7 @@
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/username" />
-
-            <EditText
-                android:id="@+id/username"
-                android:layout_width="220dp"
-                android:layout_height="50dp"
-                android:layout_marginTop="16dp"
-                android:drawableLeft="@drawable/baseline_person_24"
-                android:drawablePadding="6dp"
-                android:drawableTint="@color/colorPrimary"
-                android:ems="10"
-                android:hint="@string/prompt_username"
-                android:inputType="text"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
+                app:layout_constraintTop_toBottomOf="@id/newpass" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
 

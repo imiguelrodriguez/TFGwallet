@@ -35,4 +35,7 @@
     <!-- Code Blue -->
     <color name="codeBlue">#2196F3</color> <!-- Blue -->
     <color name="codeBlueLight">#64B5F6</color> <!-- Light Blue -->
+
+    <color name="colorButtonDisabled">#907C4DFF</color>
+
 </resources>

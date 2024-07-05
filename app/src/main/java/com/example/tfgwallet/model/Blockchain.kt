@@ -3,7 +3,6 @@ package com.example.tfgwallet.model
 import android.content.Context
 import android.util.Log
 import com.example.tfgwallet.R
-import com.example.tfgwallet.SKM_SC.PPMWallet.src.SKM_SC_Manager
 import com.example.tfgwallet.SKM_SC.PPMWallet.src.contracts.SKM_SC
 import org.web3j.crypto.Bip32ECKeyPair
 import org.web3j.crypto.Credentials
@@ -11,7 +10,6 @@ import org.web3j.crypto.RawTransaction
 import org.web3j.crypto.TransactionEncoder
 import org.web3j.protocol.Web3j
 import org.web3j.protocol.core.DefaultBlockParameter
-import org.web3j.protocol.core.DefaultBlockParameterName
 import org.web3j.protocol.core.methods.response.EthGetTransactionReceipt
 import org.web3j.protocol.http.HttpService
 import org.web3j.tx.RawTransactionManager
@@ -22,7 +20,6 @@ import java.math.BigInteger
 object Blockchain {
     lateinit var web3: Web3j
     lateinit var gasProvider: StaticGasProvider
-    lateinit var skmSCManager: SKM_SC_Manager
     lateinit var contract: SKM_SC
     private const val CHAIN_ID: Long = 11155111
     /*
@@ -36,8 +33,7 @@ object Blockchain {
             web3 = Web3j.build(HttpService(url))
             Log.i("BC connection", "Successful connection to the blockchain.")
             gasProvider =
-                StaticGasProvider(BigInteger.valueOf(40).multiply(BigInteger.valueOf(1000000000)), BigInteger.valueOf(3721974))
-            skmSCManager = SKM_SC_Manager.getSKM_SC_Manager(this.web3, gasProvider)
+                StaticGasProvider(BigInteger.valueOf(50).multiply(BigInteger.valueOf(1000000000)), BigInteger.valueOf(3721974))
         } catch (e: Exception) {
             Log.e("BC connection error", "Error connecting to the blockchain.${e.printStackTrace().toString()}")
         }
@@ -164,7 +160,7 @@ object Blockchain {
         val nonce = ethGetTransactionCount.transactionCount
         val gasPrice = gasProvider.gasPrice
         val gasLimit = gasProvider.gasLimit
-        val value = BigInteger.valueOf(500000000000000000) // Amount in wei (0.5 ETH)
+        val value = BigInteger.valueOf(1500000000000000000) // Amount in wei (0.5 ETH)
         val data = "" // Optional data field
 
         val rawTransaction = RawTransaction.createEtherTransaction(

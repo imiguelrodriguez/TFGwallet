@@ -138,11 +138,12 @@ object KeyManagement {
         // FOR THE MOMENT: CONCATENATE IV SO THAT THE PLUGIN CAN DECRYPT
         val encryptedBytes = cipher.doFinal(keyPair.privateKey.toByteArray()+keyPair.publicKey.toByteArray()+keyPair.chainCode)
         Log.i("EncryptedData", encryptedBytes.toString())
-        return iv+encryptedBytes
+        // send iv + size in bytes of private key + size in bytes of public key + encrypted (size of chain code not needed)
+        return iv+keyPair.privateKey.toByteArray().size.toByte()+keyPair.publicKey.toByteArray().size.toByte()+encryptedBytes
     }
     fun generateMnemonic(): MutableList<String> {
         val secureRandom = SecureRandom()
-        val entropy = ByteArray(16)
+        val entropy = ByteArray(32)
         secureRandom.nextBytes(entropy)
         return MnemonicCode.INSTANCE.toMnemonic(entropy)
     }

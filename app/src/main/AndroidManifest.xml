@@ -34,6 +34,7 @@
         </activity>
         <activity android:name=".ui.ForgotActivity"  android:configChanges="orientation"/>
         <activity android:name=".ui.SignUpActivity"  android:configChanges="orientation"/>
+        <activity android:name=".ui.MnemonicsActivity"  android:configChanges="orientation"/>
         <activity android:name=".ui.QRCodeScannerActivity"  android:configChanges="orientation"/>
         <activity android:name="com.journeyapps.barcodescanner.CaptureActivity"
             android:screenOrientation="fullSensor"

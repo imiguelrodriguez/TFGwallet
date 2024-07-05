@@ -4,6 +4,9 @@ import android.content.Context
 import com.example.tfgwallet.model.Utilities.Companion.UByteArrayToBigInteger
 import com.example.tfgwallet.model.Utilities.Companion.readFile
 import com.example.tfgwallet.model.Utilities.Companion.toUByteArray
+import org.bitcoinj.core.ECKey
+import org.bouncycastle.math.ec.ECPoint
+import org.web3j.crypto.Bip32ECKeyPair
 
 //import org.bitcoinj.core.ECKey
 import java.math.BigInteger
@@ -175,7 +178,7 @@ class Protocols {
                 this.privateKey = output.first
                 this.chain = output.second
                 //this.publicKey = UByteArrayToBigInteger(serP(point(output.first)))
-            }/*
+            }
             /**
              * This function performs the multiplication of the integer i with the
              * secp256k1 base point (elliptic curve y^2 = x^3 + 7 (mod p)) and returns
@@ -187,7 +190,7 @@ class Protocols {
             private fun point(p: BigInteger): org.bouncycastle.math.ec.ECPoint {
                 val basePoint : org.bouncycastle.math.ec.ECPoint = ECKey.CURVE.g
                 return basePoint.multiply(p)
-            }*/
+            }
 
             /**
              * This function performs the serialization of
@@ -232,12 +235,12 @@ class Protocols {
              *
              * @param P the (x,y) ECPoint
              * @return the resulting SEC1 compressed UByteArray
-             *//*
-            private fun serP(P: .math.ec.ECPoint): UByteArray {
+             */
+            private fun serP(P: ECPoint): UByteArray {
                 val xCoordBytes = ser256(P.xCoord.toBigInteger())
                 val headerByte: UByte = if (P.yCoord.toBigInteger() % BigInteger("2") == BigInteger.ZERO) 0x02.toUByte() else 0x03.toUByte()
                 return ubyteArrayOf(headerByte) + xCoordBytes
-            }*/
+            }
 
             /**
              * This function converts a 32-byte array to a BigInteger
@@ -282,6 +285,7 @@ class Protocols {
 
 }
 
+@OptIn(ExperimentalStdlibApi::class)
 fun main(args: Array<String>) {
     /*
     val inputString = "Hello, this is a test string for hashing."
@@ -291,5 +295,12 @@ fun main(args: Array<String>) {
     var seed = bip39.getSeed()
     var bip32 = Protocols.Companion.Bip32(seed.second)
 */
-
+    fun chainCodeToByteArray(bigInteger: BigInteger): ByteArray {
+        return if (bigInteger.toByteArray().size > 32)
+            bigInteger.toByteArray().sliceArray(1 until bigInteger.toByteArray().size)
+        else bigInteger.toByteArray()
+    }
+    val keyPair2 = Bip32ECKeyPair.generateKeyPair("3f46f9b96351da0612683fa79369943f37a6175c1d020abf808a69eb66d9f4e5869d0f4914836c4e9138a8a1e45bdfb080b6f44aad52eb3e8ccdf66eeaa189c8".hexToByteArray(HexFormat.Default))
+    val keyPair = Bip32ECKeyPair.create(BigInteger("98984872108241093190520617063184863546270358929704159660541814886092807286645"), chainCodeToByteArray(BigInteger("97770283675407653932727060266282131146064349006956450322918695236174893329652")))
+    val child = Bip32ECKeyPair.deriveKeyPair(keyPair, intArrayOf(Protocols.sha256("www.dapp.com").substring(0, 8).hexToInt(HexFormat.Default) or Bip32ECKeyPair.HARDENED_BIT))
 }

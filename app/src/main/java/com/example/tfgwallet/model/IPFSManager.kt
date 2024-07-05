@@ -27,14 +27,14 @@ object IPFSManager  {
     }
 
 }
-/*
+
 fun main() {
-    val currentDir = System.getProperty("user.dir")
-    println("Current working directory: $currentDir")
-    val ipfs = IPFS(IPFSConfiguration(base_url = "http://127.0.0.1:5001/api/v0/"))
-   // val f = ipfs.add.file(File("app/src/main/assets/english.txt"), "english.txt")
-   // println("Hash: " + f.Hash + " for file name " + f.Name)
-    println(ipfs.get.cat("QmboH69rqqevyHjtPp4d8ujvAMHZCCc7KEu4AEds9EHspx"))
+    /*val currentDir = System.getProperty("user.dir")
+    println("Current working directory: $currentDir")*/
+    val ipfs = IPFS(IPFSConfiguration(base_url = "http://192.168.1.149:5001/api/v0/"))
+    // val f = ipfs.add.file(File("app/src/main/assets/english.txt"), "english.txt")
+    // println("Hash: " + f.Hash + " for file name " + f.Name)
+    println(ipfs.get.cat("QmcuxneW98zQchBU6rGrntBphe5p82wc4M6JuK2Wa2oCpk"))
     println(ipfs.get.cat("QmWr7iqiych7ZMYjiQDuSwDFrRNuNdWxKVzwSxwbaAmeXV"))
 
-}*/
+}
