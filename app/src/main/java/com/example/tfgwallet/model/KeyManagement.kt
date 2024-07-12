@@ -41,6 +41,13 @@ object KeyManagement {
         }
         return false
     }
+
+    /**
+     * Method that encrypts the master BIP32 KeyPair using the RSA algorithm.
+     * @param data the BIP32 KeyPair
+     * @param userId String indicating the user name
+     * @param context app context
+     */
     fun encryptRSA(data: Bip32ECKeyPair, userId: String, context: Context) {
         // Generate RSA key pair
         val keyPairGenerator =

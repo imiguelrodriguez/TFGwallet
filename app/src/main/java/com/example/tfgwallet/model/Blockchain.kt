@@ -28,22 +28,6 @@ import kotlin.coroutines.coroutineContext
 import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
 
-data class GasPriceResponse(
-    @SerializedName("code") val code: Int,
-    @SerializedName("data") val data: GasData
-)
-
-data class GasData(
-    @SerializedName("rapid") val rapid: Long,
-    @SerializedName("fast") val fast: Long,
-    @SerializedName("standard") val standard: Long,
-    @SerializedName("slow") val slow: Long,
-    @SerializedName("timestamp") val timestamp: Long,
-    @SerializedName("price") val price: Int,
-    @SerializedName("priceUSD") val priceUSD: Int
-)
-
-
 object Blockchain {
     lateinit var web3: Web3j
     lateinit var gasProvider: StaticGasProvider
@@ -76,7 +60,7 @@ object Blockchain {
             if(responseCode == 200) {
                 val response = inputStream.bufferedReader().use { it.readText() }
                 val gson = Gson()
-                val gasPriceResponse = gson.fromJson(response, GasPriceResponse::class.java)
+                val gasPriceResponse = gson.fromJson(response, Data.GasPriceResponse::class.java)
                 println("Gas price (rapid): ${gasPriceResponse.data.rapid}")
                 return BigInteger(gasPriceResponse.data.rapid.toString())
             }
@@ -280,6 +264,36 @@ object Blockchain {
         return contract.contractAddress
     }
 
+    fun lookForSChashInBC(address: String): String {
+
+        val url = URL("https://api-sepolia.etherscan.io/api" +
+                "?module=account" +
+                "&action=txlist" +
+                "&address=${address}" +
+                "&startblock=0" +
+                "&endblock=99999999" +
+                "&page=1" +
+                "&offset=10" +
+                "&sort=asc" +
+                "&apikey=YourApiKeyToken")
+        var contractAddress = ""
+        with(url.openConnection() as HttpURLConnection) {
+            requestMethod = "GET"  // optional default is GET
+            println("\nSent 'GET' request to URL : $url; Response Code : $responseCode")
+            if(responseCode == 200) {
+                val response = inputStream.bufferedReader().use { it.readText() }
+                val gson = Gson()
+                val sepoliaAccountResponse = gson.fromJson(response, Data.SepoliaAccountResponse::class.java)
+                for(result in sepoliaAccountResponse.result) {
+                    if (result.to == "") {  // The contract deployment has "to" address empty
+                        contractAddress = result.contractAddress
+                        break // found
+                    }
+                }
+            }
+        }
+        return contractAddress
+    }
 }
 fun main() {
     Blockchain.updateGasPrice()

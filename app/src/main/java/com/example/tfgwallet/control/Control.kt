@@ -4,16 +4,16 @@ import android.content.Context
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import android.util.Log
-import androidx.core.content.ContextCompat.getString
-import com.example.tfgwallet.R
 import com.example.tfgwallet.databinding.ActivitySignupBinding
 import com.example.tfgwallet.model.Blockchain
+import com.example.tfgwallet.model.Data
 import com.example.tfgwallet.model.KeyManagement
 import com.example.tfgwallet.model.Protocols
+import com.google.gson.Gson
+import com.google.gson.annotations.SerializedName
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
-import kotlinx.coroutines.launch
 import org.web3j.crypto.Bip32ECKeyPair
 import org.web3j.crypto.Credentials
 import java.io.ByteArrayInputStream
@@ -21,6 +21,8 @@ import java.io.ByteArrayOutputStream
 import java.io.ObjectInputStream
 import java.io.ObjectOutputStream
 import java.math.BigInteger
+import java.net.HttpURLConnection
+import java.net.URL
 import java.security.KeyStore
 import java.security.PrivateKey
 import java.security.PublicKey
@@ -166,6 +168,18 @@ class Control {
             }
         }
 
+        fun recoverKeys(user: String, mnemonic: String, password: String, context: Context) {
+            // Root Secret Key (SK0) and Root Chain code C0.
+            val masterKeyPair = KeyManagement.generateKeyPair(mnemonic.split(" ") as MutableList<String>, password)
+            val username = user.substringBefore("@")
 
+            // Store SK0 in the smartphone’s secure storage
+            KeyManagement.encryptRSA(masterKeyPair, username, context)
+            val acc = Credentials.create(masterKeyPair)
+
+            // Look for the SKM SC deployed using the key pair (SK0, P K0) int the BC, and store its hash, hSC , in the app storage
+            val contractAddress = Blockchain.lookForSChashInBC(acc.address)
+
+        }
     }
 }
