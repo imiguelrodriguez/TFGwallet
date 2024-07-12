@@ -19,6 +19,7 @@
     <string name="title_notifications">Notifications</string>
     <string name="BLOCKCHAIN_IP">https://rpc2.sepolia.org</string>
     <string name="IPFS_IP">http://192.168.0.16:5001/api/v0/</string>
+    <string name="GASNOW_API_IP">https://sepolia.beaconcha.in/api/v1/execution/gasnow</string>
     <string name="no_keys">There aren\'t any keys at the moment.</string>
     <string name="enable_2af">Enable 2AF in future accesses</string>
     <string name="pick_mnemonic">Select mnemonic word</string>

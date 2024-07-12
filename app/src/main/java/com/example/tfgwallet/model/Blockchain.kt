@@ -1,9 +1,14 @@
 package com.example.tfgwallet.model
 
 import android.content.Context
+import android.os.Build
 import android.util.Log
+import androidx.core.content.ContextCompat
 import com.example.tfgwallet.R
 import com.example.tfgwallet.SKM_SC.PPMWallet.src.contracts.SKM_SC
+import io.ipfs.kotlin.IPFS
+import io.ipfs.kotlin.IPFSConfiguration
+import org.json.JSONObject
 import org.web3j.crypto.Bip32ECKeyPair
 import org.web3j.crypto.Credentials
 import org.web3j.crypto.RawTransaction
@@ -15,7 +20,29 @@ import org.web3j.protocol.http.HttpService
 import org.web3j.tx.RawTransactionManager
 import org.web3j.tx.gas.StaticGasProvider
 import org.web3j.utils.Numeric
+import java.io.BufferedReader
 import java.math.BigInteger
+import java.net.HttpURLConnection
+import java.net.URL
+import kotlin.coroutines.coroutineContext
+import com.google.gson.Gson
+import com.google.gson.annotations.SerializedName
+
+data class GasPriceResponse(
+    @SerializedName("code") val code: Int,
+    @SerializedName("data") val data: GasData
+)
+
+data class GasData(
+    @SerializedName("rapid") val rapid: Long,
+    @SerializedName("fast") val fast: Long,
+    @SerializedName("standard") val standard: Long,
+    @SerializedName("slow") val slow: Long,
+    @SerializedName("timestamp") val timestamp: Long,
+    @SerializedName("price") val price: Int,
+    @SerializedName("priceUSD") val priceUSD: Int
+)
+
 
 object Blockchain {
     lateinit var web3: Web3j
@@ -32,12 +59,34 @@ object Blockchain {
         try {
             web3 = Web3j.build(HttpService(url))
             Log.i("BC connection", "Successful connection to the blockchain.")
+
             gasProvider =
-                StaticGasProvider(BigInteger.valueOf(50).multiply(BigInteger.valueOf(1000000000)), BigInteger.valueOf(3721974))
+                StaticGasProvider(updateGasPrice(), BigInteger.valueOf(1721974))
         } catch (e: Exception) {
             Log.e("BC connection error", "Error connecting to the blockchain.${e.printStackTrace().toString()}")
         }
     }
+
+    fun updateGasPrice(): BigInteger {
+        val url = URL("https://sepolia.beaconcha.in/api/v1/execution/gasnow")
+
+        with(url.openConnection() as HttpURLConnection) {
+            requestMethod = "GET"  // optional default is GET
+            println("\nSent 'GET' request to URL : $url; Response Code : $responseCode")
+            if(responseCode == 200) {
+                val response = inputStream.bufferedReader().use { it.readText() }
+                val gson = Gson()
+                val gasPriceResponse = gson.fromJson(response, GasPriceResponse::class.java)
+                println("Gas price (rapid): ${gasPriceResponse.data.rapid}")
+                return BigInteger(gasPriceResponse.data.rapid.toString())
+            }
+            else { // return "default" gas price value
+                return BigInteger.valueOf(40).multiply(BigInteger.valueOf(1000000000))
+            }
+        }
+    }
+
+
 
     fun deploySKM_SC(context: Context, prefs_name: String): String {
         val keyPair: Triple<BigInteger, BigInteger, ByteArray>? = KeyManagement.decryptRsa(
@@ -160,7 +209,7 @@ object Blockchain {
         val nonce = ethGetTransactionCount.transactionCount
         val gasPrice = gasProvider.gasPrice
         val gasLimit = gasProvider.gasLimit
-        val value = BigInteger.valueOf(1500000000000000000) // Amount in wei (0.5 ETH)
+        val value = BigInteger.valueOf(500000000000000000) // Amount in wei (0.5 ETH)
         val data = "" // Optional data field
 
         val rawTransaction = RawTransaction.createEtherTransaction(
@@ -231,4 +280,7 @@ object Blockchain {
         return contract.contractAddress
     }
 
+}
+fun main() {
+    Blockchain.updateGasPrice()
 }

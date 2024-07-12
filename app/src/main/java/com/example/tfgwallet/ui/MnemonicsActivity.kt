@@ -72,6 +72,8 @@ class MnemonicsActivity : AppCompatActivity() {
             else
                 updateWords(0)
         }
+
+        val intent = intent
     }
 
     private fun updateWords(i: Int) {

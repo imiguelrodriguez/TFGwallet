@@ -147,6 +147,8 @@ class Control {
                     var status = ""
                     val res = GlobalScope.async(Dispatchers.IO) {
                         status = Blockchain.addDevice(from, brKeyPair, context, prefs_name).toString()
+                        // it is necessary to fund the account of the plugin in order to being able to call methods from the plugin
+                        Blockchain.send(context, Credentials.create(brKeyPair).address)
                         //  removed +id.hexToByteArray() + ByteArray(64) to the output of encryption
                         val encrypted = KeyManagement.encryptWithSessionKey(brKeyPair, sessionKey)
                         Blockchain.modTemp(from, encrypted, context, prefs_name)
