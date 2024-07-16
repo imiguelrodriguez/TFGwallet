@@ -17,7 +17,6 @@ import java.security.KeyStore
 import java.security.SecureRandom
 import javax.crypto.Cipher
 import javax.crypto.spec.GCMParameterSpec
-import javax.crypto.spec.IvParameterSpec
 import javax.crypto.spec.SecretKeySpec
 
 
@@ -132,7 +131,7 @@ object KeyManagement {
     @OptIn(ExperimentalStdlibApi::class)
     fun encryptWithSessionKey(keyPair: Bip32ECKeyPair, sessionKey: ByteArray): ByteArray {
         val secureRandom = SecureRandom()
-        var iv = ByteArray(12)
+        val iv = ByteArray(12)
         secureRandom.nextBytes(iv)
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
         val keySpec = SecretKeySpec(sessionKey, "AES")
@@ -148,17 +147,35 @@ object KeyManagement {
         // send iv + size in bytes of private key + size in bytes of public key + encrypted (size of chain code not needed)
         return iv+keyPair.privateKey.toByteArray().size.toByte()+keyPair.publicKey.toByteArray().size.toByte()+encryptedBytes
     }
+
+    /**
+     * Method to generate a mnemonic word list of length 24.
+     * @return list of String with the words.
+     */
     fun generateMnemonic(): MutableList<String> {
         val secureRandom = SecureRandom()
         val entropy = ByteArray(32)
         secureRandom.nextBytes(entropy)
         return MnemonicCode.INSTANCE.toMnemonic(entropy)
     }
+
+    /**
+     * Method that generates a Bip32ECKeyPair based on a mnemonic word list and a password.
+     * @param mnemonicList - list of String indicating the mnemonic words as part of the seed for BIP32 protocol.
+     * @param password - String with the password as part of the seed for BIP32 protocol.
+     * @return Bip32ECKeyPair with the root key pair.
+     */
     fun generateKeyPair(mnemonicList: MutableList<String>, password: String): Bip32ECKeyPair {
         val seed = MnemonicCode.toSeed(mnemonicList, password)
         return Bip32ECKeyPair.generateKeyPair(seed)
     }
 
+    /**
+     * Method that generates a Bip32ECKeyPair for the plugin based on a root key and a derivation path.
+     * @param keyPair - Bip32ECKeyPair indicating the root key pair.
+     * @param path - IntArray with the derivation path.
+     * @return Bip32ECKeyPair with the browser key pair.
+     */
     fun generateBrowserKeyPair(keyPair: Bip32ECKeyPair, path: IntArray): Bip32ECKeyPair {
         return Bip32ECKeyPair.deriveKeyPair(keyPair, path)
     }

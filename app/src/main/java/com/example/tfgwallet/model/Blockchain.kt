@@ -39,7 +39,7 @@ object Blockchain {
             gasProvider =
                 StaticGasProvider(gasPrice, BigInteger.valueOf(1721974))
         } catch (e: Exception) {
-            Log.e("BC connection error", "Error connecting to the blockchain.${e.printStackTrace().toString()}")
+            Log.e("BC connection error", "Error connecting to the blockchain.${e.printStackTrace()}")
         }
     }
 
@@ -47,7 +47,7 @@ object Blockchain {
      * Method that calls sepolia beaconcha API to get the current gas price.
      * @return BigInteger indicating the current gas price.
      */
-    fun updateGasPrice(): BigInteger {
+    private fun updateGasPrice(): BigInteger {
         val url = URL("https://sepolia.beaconcha.in/api/v1/execution/gasnow")
 
         with(url.openConnection() as HttpURLConnection) {
@@ -292,7 +292,4 @@ object Blockchain {
         }
         return transactionReceipt
     }
-}
-fun main() {
-    Blockchain.updateGasPrice()
 }

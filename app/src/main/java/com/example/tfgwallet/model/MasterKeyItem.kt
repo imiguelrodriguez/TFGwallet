@@ -1,4 +1,7 @@
 package com.example.tfgwallet.model
 
-data class MasterKeyItem(val privKey: String, val pubKey: String, val chainCode: String, val scHash: String)
+data class MasterKeyItem(
+    val keyItem: KeyItem,
+    val scHash: String,
+)
 

@@ -8,6 +8,7 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.tfgwallet.databinding.FragmentKeysBinding
+import com.example.tfgwallet.model.KeyItem
 import com.example.tfgwallet.model.MasterKeyItem
 import com.example.tfgwallet.ui.MasterKeyItemAdapter
 
@@ -36,7 +37,7 @@ class KeysFragment : Fragment() {
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
+    ): View {
         binding = FragmentKeysBinding.inflate(inflater, container, false)
         setKeysDataAdapter()
         setupRecyclerView()
@@ -54,7 +55,7 @@ class KeysFragment : Fragment() {
         val keys: MutableList<MasterKeyItem> = ArrayList()
         val scHash = context?.getSharedPreferences("user_$user", Context.MODE_PRIVATE)
             ?.getString("user_${user}_contract", "").toString()
-        keys.add(MasterKeyItem("0x$privKey", "0x$pubKey", "0x$chainCode", scHash))
+        keys.add(MasterKeyItem(KeyItem("0x$privKey", "0x$pubKey", "0x$chainCode"), scHash))
         binding.masterNoKeys.visibility = View.INVISIBLE
         mAdapter = MasterKeyItemAdapter(keys)
     }

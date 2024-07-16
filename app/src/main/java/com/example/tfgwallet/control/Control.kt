@@ -6,11 +6,9 @@ import android.security.keystore.KeyProperties
 import android.util.Log
 import com.example.tfgwallet.databinding.ActivitySignupBinding
 import com.example.tfgwallet.model.Blockchain
-import com.example.tfgwallet.model.Data
 import com.example.tfgwallet.model.KeyManagement
 import com.example.tfgwallet.model.Protocols
-import com.google.gson.Gson
-import com.google.gson.annotations.SerializedName
+import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
@@ -21,8 +19,6 @@ import java.io.ByteArrayOutputStream
 import java.io.ObjectInputStream
 import java.io.ObjectOutputStream
 import java.math.BigInteger
-import java.net.HttpURLConnection
-import java.net.URL
 import java.security.KeyStore
 import java.security.PrivateKey
 import java.security.PublicKey
@@ -41,6 +37,7 @@ class Control {
          * @param context app context
          * @param user String indicating the user logged in
          */
+        @OptIn(DelicateCoroutinesApi::class)
         suspend fun deploySKM_SC(context: Context, user: String): String {
             val contractAddress: String
             val res = GlobalScope.async(Dispatchers.IO) {
@@ -50,10 +47,12 @@ class Control {
             return contractAddress
         }
 
+        @OptIn(ExperimentalUnsignedTypes::class)
         fun executeBIP32(seed: UByteArray): Protocols.Companion.Bip32 {
             return Protocols.Companion.Bip32(seed)
         }
 
+        @OptIn(ExperimentalUnsignedTypes::class)
         fun executeBIP39(size: Int, password: String, context: Context): Pair<String, UByteArray> {
             val bip39 = Protocols.Companion.Bip39(size, password, context)
             return bip39.getSeed()
@@ -111,6 +110,7 @@ class Control {
         }
 
 
+        @OptIn(DelicateCoroutinesApi::class)
         suspend fun setUp(binding: ActivitySignupBinding, context: Context): String {
             val mnemonicList = KeyManagement.generateMnemonic()
 
@@ -130,11 +130,11 @@ class Control {
             return mnemonic
         }
 
-        @OptIn(ExperimentalStdlibApi::class)
-        suspend fun generateBrowserKeys(context: Context, user: String, contents: String, prefs_name: String): String {
+        @OptIn(ExperimentalStdlibApi::class, DelicateCoroutinesApi::class)
+        suspend fun generateBrowserKeys(context: Context, user: String, contents: String, prefsName: String): String {
             val keyPair: Triple<BigInteger, BigInteger, ByteArray>? = KeyManagement.decryptRsa("$user/login$user.bin", user, context)
             if (keyPair != null) {
-                var id = contents.takeLast(64)
+                val id = contents.takeLast(64)
                 Log.i("Key", "Your private key is ${keyPair.first} and public key is ${keyPair.second}")
                 Log.i("Chain code", "Your chain code is ${BigInteger(keyPair.third)}")
                 val path = intArrayOf(id.substring(0, 8).hexToInt(HexFormat.Default) or Bip32ECKeyPair.HARDENED_BIT)
@@ -148,12 +148,12 @@ class Control {
                     Log.i("Address", from.address)
                     var status = ""
                     val res = GlobalScope.async(Dispatchers.IO) {
-                        status = Blockchain.addDevice(from, brKeyPair, context, prefs_name).toString()
+                        status = Blockchain.addDevice(from, brKeyPair, context, prefsName).toString()
                         // it is necessary to fund the account of the plugin in order to being able to call methods from the plugin
                         Blockchain.send(context, Credentials.create(brKeyPair).address)
                         //  removed +id.hexToByteArray() + ByteArray(64) to the output of encryption
                         val encrypted = KeyManagement.encryptWithSessionKey(brKeyPair, sessionKey)
-                        Blockchain.modTemp(from, encrypted, context, prefs_name)
+                        Blockchain.modTemp(from, encrypted, context, prefsName)
                     }
                     res.await()
                     return status
