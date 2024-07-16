@@ -1,14 +1,9 @@
 package com.example.tfgwallet.model
 
 import android.content.Context
-import android.os.Build
 import android.util.Log
-import androidx.core.content.ContextCompat
 import com.example.tfgwallet.R
-import com.example.tfgwallet.SKM_SC.PPMWallet.src.contracts.SKM_SC
-import io.ipfs.kotlin.IPFS
-import io.ipfs.kotlin.IPFSConfiguration
-import org.json.JSONObject
+import com.example.tfgwallet.contracts.SKM_SC
 import org.web3j.crypto.Bip32ECKeyPair
 import org.web3j.crypto.Credentials
 import org.web3j.crypto.RawTransaction
@@ -20,18 +15,15 @@ import org.web3j.protocol.http.HttpService
 import org.web3j.tx.RawTransactionManager
 import org.web3j.tx.gas.StaticGasProvider
 import org.web3j.utils.Numeric
-import java.io.BufferedReader
 import java.math.BigInteger
 import java.net.HttpURLConnection
 import java.net.URL
-import kotlin.coroutines.coroutineContext
 import com.google.gson.Gson
-import com.google.gson.annotations.SerializedName
 
 object Blockchain {
-    lateinit var web3: Web3j
-    lateinit var gasProvider: StaticGasProvider
-    lateinit var contract: SKM_SC
+    private lateinit var web3: Web3j
+    private lateinit var gasProvider: StaticGasProvider
+    private lateinit var contract: SKM_SC
     private const val CHAIN_ID: Long = 11155111
     /*
         Please note that this private constants are just for the purpose of development, they should be
@@ -43,14 +35,18 @@ object Blockchain {
         try {
             web3 = Web3j.build(HttpService(url))
             Log.i("BC connection", "Successful connection to the blockchain.")
-
+            val gasPrice  = updateGasPrice()
             gasProvider =
-                StaticGasProvider(updateGasPrice(), BigInteger.valueOf(1721974))
+                StaticGasProvider(gasPrice, BigInteger.valueOf(1721974))
         } catch (e: Exception) {
             Log.e("BC connection error", "Error connecting to the blockchain.${e.printStackTrace().toString()}")
         }
     }
 
+    /**
+     * Method that calls sepolia beaconcha API to get the current gas price.
+     * @return BigInteger indicating the current gas price.
+     */
     fun updateGasPrice(): BigInteger {
         val url = URL("https://sepolia.beaconcha.in/api/v1/execution/gasnow")
 
@@ -70,12 +66,16 @@ object Blockchain {
         }
     }
 
-
-
-    fun deploySKM_SC(context: Context, prefs_name: String): String {
+    /**
+     * Method that deploys a SKM smart contract in the BC.
+     * @param context - Context of the app.
+     * @param prefsName - String with the name of the preferences of the user where the hash of the contract is stored.
+     * @return String with the contract address.
+     */
+    fun deploySKM_SC(context: Context, prefsName: String): String {
         val keyPair: Triple<BigInteger, BigInteger, ByteArray>? = KeyManagement.decryptRsa(
-            "${prefs_name.substringAfter("_")}/login${prefs_name.substringAfter("_")}.bin",
-            prefs_name.substringAfter("_"),
+            "${prefsName.substringAfter("_")}/login${prefsName.substringAfter("_")}.bin",
+            prefsName.substringAfter("_"),
             context
         )
         if (!::web3.isInitialized) {
@@ -89,18 +89,26 @@ object Blockchain {
                 Log.e("error", e.toString())
             }
         }
-        val prefs = context.getSharedPreferences(prefs_name, Context.MODE_PRIVATE)
-        prefs.edit().putString(prefs_name + "_contract", contract.contractAddress).apply()
+        val prefs = context.getSharedPreferences(prefsName, Context.MODE_PRIVATE)
+        prefs.edit().putString(prefsName + "_contract", contract.contractAddress).apply()
         return contract.contractAddress
     }
 
-    fun modTemp(from: Credentials, value: ByteArray, context: Context, prefs_name: String): String? {
+    /**
+     * Method that calls the modTemp function defined in the SKMSC contract.
+     * @param from - Credentials of the account calling the method.
+     * @param value - ByteArray with the value to be stored in the temp field.
+     * @param context - Context of the app.
+     * @param prefsName - String with the name of the preferences of the user where the hash of the contract is stored.
+     * @return String with the status of the transaction
+     */
+    fun modTemp(from: Credentials, value: ByteArray, context: Context, prefsName: String): String? {
         if (!::web3.isInitialized) {
             connect(context.getString(R.string.BLOCKCHAIN_IP))
         }
         if (!::contract.isInitialized) {
             return try {
-                initContract(context, prefs_name, from)
+                initContract(context, prefsName, from)
                 val transactionHash = contract.modTemp(value).send().transactionHash
                 val transactionReceipt = getTxReceipt(transactionHash)
                 transactionReceipt?.result?.status
@@ -119,37 +127,21 @@ object Blockchain {
             }
         }
     }
-    private fun initContract(context: Context, prefs_name: String, from: Credentials) {
-        val prefs = context.getSharedPreferences(prefs_name, Context.MODE_PRIVATE)
-        val address = prefs.getString(prefs_name + "_contract", null)
-        contract = SKM_SC.load(
-            address,
-            web3,
-            RawTransactionManager(
-                web3,
-                from, CHAIN_ID
-            ),
-            gasProvider
-        )
-    }
-    private fun getTxReceipt(transactionHash: String): EthGetTransactionReceipt? {
-        var transactionReceipt = web3.ethGetTransactionReceipt(transactionHash).send()
 
-        while (true) {
-            if (transactionReceipt.result != null) {
-                break
-            }
-            println(transactionReceipt.result)
-            Thread.sleep(5000)
-            transactionReceipt = web3.ethGetTransactionReceipt(transactionHash).send()
-        }
-        return transactionReceipt
-    }
+
+    /**
+     * Method that calls the addDevice function defined in the SKMSC contract.
+     * @param from - Credentials of the account calling the method.
+     * @param plugin - Bip32ECKeyPair of the newly configured plugin.
+     * @param context - Context of the app.
+     * @param prefsName - String with the name of the preferences of the user where the hash of the contract is stored.
+     * @return String with the status of the transaction
+     */
     fun addDevice(
         from: Credentials,
         plugin: Bip32ECKeyPair,
         context: Context,
-        prefs_name: String
+        prefsName: String
     ): String? {
         val pub = Credentials.create(plugin).address
         if (!::web3.isInitialized) {
@@ -157,7 +149,7 @@ object Blockchain {
         }
         if (!::contract.isInitialized) {
             return try {
-                initContract(context, prefs_name, from)
+                initContract(context, prefsName, from)
 
                 val transactionHash = contract.addDevice(pub).send().transactionHash
                 val transactionReceipt = getTxReceipt(transactionHash)
@@ -179,7 +171,9 @@ object Blockchain {
     }
 
     /**
-     *
+     * Method that send funds to the address specified.
+     * @param context - Context of the running app.
+     * @param recipientAddress - String with the address that will receive the funds.
      */
     fun send(context: Context, recipientAddress: String) {
         if (!::web3.isInitialized) {
@@ -194,7 +188,6 @@ object Blockchain {
         val gasPrice = gasProvider.gasPrice
         val gasLimit = gasProvider.gasLimit
         val value = BigInteger.valueOf(500000000000000000) // Amount in wei (0.5 ETH)
-        val data = "" // Optional data field
 
         val rawTransaction = RawTransaction.createEtherTransaction(
             nonce, gasPrice, gasLimit, recipientAddress, value
@@ -222,48 +215,13 @@ object Blockchain {
         }
     }
 
-    fun deploySKM_SC2(senderAddress: String, privateKey: String): String {
-
-        if (!::web3.isInitialized) {
-            connect("https://rpc.sepolia.org")
-        }
-            try {
-                val ethGetTransactionCount = web3.ethGetTransactionCount(
-                    senderAddress, DefaultBlockParameter.valueOf("latest")
-                ).send()
-
-                SKM_SC.deploy(web3, RawTransactionManager(web3, Credentials.create(privateKey), 11155111), StaticGasProvider(BigInteger.valueOf(69).multiply(BigInteger.valueOf(1000000000)), BigInteger.valueOf(6721974))).send()
-                val nonce = ethGetTransactionCount.transactionCount.add(BigInteger.ONE)
-                val gasPrice = BigInteger.valueOf(69).multiply(BigInteger.valueOf(1000000000)); // 12 Gwei
-                val gasLimit = BigInteger.valueOf(6721974)
-
-                val rawTransaction = RawTransaction.createContractTransaction(
-                    nonce,
-                    gasPrice,
-                    gasLimit, BigInteger.ZERO,
-                    "608060405234801561000f575f80fd5b50335f806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff160217905550610cfc8061005c5f395ff3fe608060405234801561000f575f80fd5b5060043610610091575f3560e01c80639525256011610064578063952525601461011b578063ad70dd5b14610139578063b111cb8414610155578063bf28921614610171578063c1c6b6b61461018d57610091565b80631d6d32ba146100955780631f3a2ae2146100b35780631f7b6324146100cf5780635a7db533146100eb575b5f80fd5b61009d6101ab565b6040516100aa91906109d5565b60405180910390f35b6100cd60048036038101906100c89190610a76565b61027d565b005b6100e960048036038101906100e49190610ab4565b6103de565b005b61010560048036038101906101009190610ab4565b61054f565b60405161011291906109d5565b60405180910390f35b6101236106b1565b60405161013091906109d5565b60405180910390f35b610153600480360381019061014e9190610adf565b6106ba565b005b61016f600480360381019061016a9190610ab4565b61078d565b005b61018b60048036038101906101869190610adf565b6108ff565b005b610195610996565b6040516101a29190610b19565b60405180910390f35b5f60015f3373ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff1681526020019081526020015f205f015f9054906101000a900460ff16610237576040517f08c379a000000000000000000000000000000000000000000000000000000000815260040161022e90610b8c565b60405180910390fd5b60015f3373ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff1681526020019081526020015f2060010154905090565b5f8054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff161461030a576040517f08c379a000000000000000000000000000000000000000000000000000000000815260040161030190610c1a565b60405180910390fd5b60015f8373ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff1681526020019081526020015f205f015f9054906101000a900460ff16610395576040517f08c379a000000000000000000000000000000000000000000000000000000000815260040161038c90610b8c565b60405180910390fd5b8060015f8473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff1681526020019081526020015f20600101819055505050565b5f8054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff161461046b576040517f08c379a000000000000000000000000000000000000000000000000000000000815260040161046290610c1a565b60405180910390fd5b60015f8273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff1681526020019081526020015f205f015f9054906101000a900460ff166104f6576040517f08c379a00000000000000000000000000000000000000000000000000000000081526004016104ed90610b8c565b60405180910390fd5b5f60015f8373ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff1681526020019081526020015f205f015f6101000a81548160ff02191690831515021790555050565b5f805f9054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff16146105de576040517f08c379a00000000000000000000000000000000000000000000000000000000081526004016105d590610c1a565b60405180910390fd5b60015f8373ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff1681526020019081526020015f205f015f9054906101000a900460ff16610669576040517f08c379a000000000000000000000000000000000000000000000000000000000815260040161066090610b8c565b60405180910390fd5b60015f8373ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff1681526020019081526020015f20600101549050919050565b5f600254905090565b60015f3373ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff1681526020019081526020015f205f015f9054906101000a900460ff16610745576040517f08c379a000000000000000000000000000000000000000000000000000000000815260040161073c90610b8c565b60405180910390fd5b8060015f3373ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff1681526020019081526020015f206001018190555050565b5f8054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff161461081a576040517f08c379a000000000000000000000000000000000000000000000000000000000815260040161081190610c1a565b60405180910390fd5b60015f8273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff1681526020019081526020015f205f015f9054906101000a900460ff16156108a6576040517f08c379a000000000000000000000000000000000000000000000000000000000815260040161089d90610ca8565b60405180910390fd5b6001805f8373ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff1681526020019081526020015f205f015f6101000a81548160ff02191690831515021790555050565b5f8054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff161461098c576040517f08c379a000000000000000000000000000000000000000000000000000000000815260040161098390610c1a565b60405180910390fd5b8060028190555050565b5f805f9054906101000a900473ffffffffffffffffffffffffffffffffffffffff16905090565b5f819050919050565b6109cf816109bd565b82525050565b5f6020820190506109e85f8301846109c6565b92915050565b5f80fd5b5f73ffffffffffffffffffffffffffffffffffffffff82169050919050565b5f610a1b826109f2565b9050919050565b610a2b81610a11565b8114610a35575f80fd5b50565b5f81359050610a4681610a22565b92915050565b610a55816109bd565b8114610a5f575f80fd5b50565b5f81359050610a7081610a4c565b92915050565b5f8060408385031215610a8c57610a8b6109ee565b5b5f610a9985828601610a38565b9250506020610aaa85828601610a62565b9150509250929050565b5f60208284031215610ac957610ac86109ee565b5b5f610ad684828501610a38565b91505092915050565b5f60208284031215610af457610af36109ee565b5b5f610b0184828501610a62565b91505092915050565b610b1381610a11565b82525050565b5f602082019050610b2c5f830184610b0a565b92915050565b5f82825260208201905092915050565b7f5468697320706c75672d696e206973206e6f7420636f6e666967757265642e005f82015250565b5f610b76601f83610b32565b9150610b8182610b42565b602082019050919050565b5f6020820190508181035f830152610ba381610b6a565b9050919050565b7f4f6e6c792074686520736d61727470686f6e6520697320616c6c6f77656420745f8201527f6f20646f207468697320616374696f6e2e000000000000000000000000000000602082015250565b5f610c04603183610b32565b9150610c0f82610baa565b604082019050919050565b5f6020820190508181035f830152610c3181610bf8565b9050919050565b7f5468697320706c75672d696e2068617320616c7265616479206265656e20636f5f8201527f6e666967757265642e0000000000000000000000000000000000000000000000602082015250565b5f610c92602983610b32565b9150610c9d82610c38565b604082019050919050565b5f6020820190508181035f830152610cbf81610c86565b905091905056fea2646970667358221220cd4383c90918d599040232fcb2803ad95bd6907a5b1dcdafd9b0f6227f2f559b64736f6c63430008180033")
-
-                val signedMessage = TransactionEncoder.signMessage(rawTransaction, 11155111L, Credentials.create(privateKey))
-
-                val hexValue = Numeric.toHexString(signedMessage)
-                val ethSendTransaction = web3.ethSendRawTransaction(hexValue).send()
-                val transactionHash = ethSendTransaction.transactionHash
-
-                println(transactionHash)
-                while (true) {
-                    var transactionReceipt = web3.ethGetTransactionReceipt(transactionHash).send()
-                    if (transactionReceipt.result != null) {
-                        break
-                    }
-                    println(transactionReceipt.result)
-                    Thread.sleep(5000)
-                }
-            } catch (e: Exception) {
-                println(e)
-            }
-        return contract.contractAddress
-    }
-
+    /**
+     * Method that searches for the hash of the SC deployed using the specified
+     * address. It uses the Sepolia Etherscan API.
+     *
+     * @param address - String with the address of the account that deployed the SC
+     * @return String with the hash of the SC, empty String if not found
+     */
     fun lookForSChashInBC(address: String): String {
 
         val url = URL("https://api-sepolia.etherscan.io/api" +
@@ -293,6 +251,46 @@ object Blockchain {
             }
         }
         return contractAddress
+    }
+
+    /**
+     * Private method that initializes the contract class variable so that other functions
+     * can interact with it without errors.
+     * @param context - Context of the app.
+     * @param prefsName - String with the name of the preferences of the user where the hash of the contract is stored.
+     * @param from - Credentials of the account that deployed the contract.
+     */
+    private fun initContract(context: Context, prefsName: String, from: Credentials) {
+        val prefs = context.getSharedPreferences(prefsName, Context.MODE_PRIVATE)
+        val address = prefs.getString(prefsName + "_contract", null)
+        contract = SKM_SC.load(
+            address,
+            web3,
+            RawTransactionManager(
+                web3,
+                from, CHAIN_ID
+            ),
+            gasProvider
+        )
+    }
+
+    /**
+     * Private method that based on a transaction hash, interacts with the BC to get its receipt.
+     * @param transactionHash - String with the transaction hash.
+     * @return EthTransactionReceipt
+     */
+    private fun getTxReceipt(transactionHash: String): EthGetTransactionReceipt? {
+        var transactionReceipt = web3.ethGetTransactionReceipt(transactionHash).send()
+
+        while (true) {
+            if (transactionReceipt.result != null) {
+                break
+            }
+            println(transactionReceipt.result)
+            Thread.sleep(5000)
+            transactionReceipt = web3.ethGetTransactionReceipt(transactionHash).send()
+        }
+        return transactionReceipt
     }
 }
 fun main() {
