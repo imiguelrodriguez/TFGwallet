@@ -117,15 +117,12 @@ object Blockchain {
         if (!::web3.isInitialized) {
             connect(context.getString(R.string.BLOCKCHAIN_IP))
         }
-        val gasLimit = estimateGasContractCall("modTemp", value, from.address)
+        val gasPrice = updateGasPrice()
         if (!::contract.isInitialized) {
             return try {
-                initContract(
-                    context,
-                    prefsName,
-                    from,
-                    StaticGasProvider(updateGasPrice(), gasLimit)
-                )
+                initContract(context, prefsName, from, StaticGasProvider(gasPrice, DEFAULT_GAS_LIMIT))
+                val gasLimit = estimateGasContractCall("modTemp", value, from.address)
+                contract.setGasProvider(StaticGasProvider(gasPrice, gasLimit))
                 val transactionHash = contract.modTemp(value).send().transactionHash
                 val transactionReceipt = getTxReceipt(transactionHash)
                 transactionReceipt?.result?.status
@@ -135,6 +132,7 @@ object Blockchain {
             }
         } else {
             return try {
+                val gasLimit = estimateGasContractCall("modTemp", value, from.address)
                 contract.setGasProvider(StaticGasProvider(updateGasPrice(), gasLimit))
                 val transactionHash = contract.modTemp(value).send().transactionHash
                 val transactionReceipt = getTxReceipt(transactionHash)
@@ -197,14 +195,15 @@ object Blockchain {
         prefsName: String
     ): String? {
         val pub = Credentials.create(plugin).address
-        val gasLimit = estimateGasContractCall("addDevice", pub, from.address)
-
         if (!::web3.isInitialized) {
             connect(context.getString(R.string.BLOCKCHAIN_IP))
         }
+        val gasPrice = updateGasPrice()
         if (!::contract.isInitialized) {
             return try {
-                initContract(context, prefsName, from, StaticGasProvider(updateGasPrice(), gasLimit))
+                initContract(context, prefsName, from, StaticGasProvider(gasPrice, DEFAULT_GAS_LIMIT))
+                val gasLimit = estimateGasContractCall("addDevice", pub, from.address)
+                contract.setGasProvider(StaticGasProvider(gasPrice, gasLimit))
                 val transactionHash = contract.addDevice(pub).send().transactionHash
                 val transactionReceipt = getTxReceipt(transactionHash)
                 transactionReceipt?.result?.status
@@ -214,7 +213,8 @@ object Blockchain {
             }
         } else {
             return try {
-                contract.setGasProvider(StaticGasProvider(updateGasPrice(), gasLimit))
+                val gasLimit = estimateGasContractCall("addDevice", pub, from.address)
+                contract.setGasProvider(StaticGasProvider(gasPrice, gasLimit))
                 val transactionHash = contract.addDevice(pub).send().transactionHash
                 val transactionReceipt = getTxReceipt(transactionHash)
                 transactionReceipt?.result?.status
@@ -278,7 +278,7 @@ object Blockchain {
             is String -> {
                 function = Function(
                     functionName,
-                    listOf(org.web3j.abi.datatypes.Utf8String(parameter)), // Input parameters
+                    listOf(org.web3j.abi.datatypes.Address(parameter)), // Input parameters
                     listOf() // Output parameters
                 )
             }
