@@ -4,7 +4,6 @@ import android.content.Context
 import android.util.Log
 import com.example.tfgwallet.R
 import com.example.tfgwallet.contracts.SKM_SC
-import org.web3j.crypto.Bip32ECKeyPair
 import org.web3j.crypto.Credentials
 import org.web3j.crypto.RawTransaction
 import org.web3j.crypto.TransactionEncoder
@@ -22,12 +21,13 @@ import org.web3j.abi.FunctionEncoder
 import org.web3j.abi.datatypes.Function
 import org.web3j.protocol.core.DefaultBlockParameterName
 import org.web3j.protocol.core.methods.request.Transaction
+import org.web3j.protocol.core.methods.response.TransactionReceipt
 
 object Blockchain {
     private lateinit var web3: Web3j
     private lateinit var contract: SKM_SC
     private const val CHAIN_ID: Long = 11155111
-    private val DEFAULT_GAS_LIMIT : BigInteger = BigInteger.valueOf(1721974)
+    private val DEFAULT_GAS_LIMIT : BigInteger = BigInteger.valueOf(3721974)
     /*
         Please note that this private constants are just for the purpose of development, they should be
         removed if the app went to a production phase.
@@ -67,12 +67,12 @@ object Blockchain {
 
         return try {
             val nonce = web3.ethGetTransactionCount(MAIN_ADDRESS, DefaultBlockParameterName.LATEST).send().transactionCount
-            val gasEstimate = estimateGasForContractDeployment(nonce)
+           // val gasEstimate = estimateGasForContractDeployment(nonce, keyPair.second)
 
             contract = SKM_SC.deploy(
                 web3,
                 RawTransactionManager(web3, Credentials.create(keyPair.first.toString(16)), CHAIN_ID),
-                StaticGasProvider(updateGasPrice(), gasEstimate)
+                StaticGasProvider(updateGasPrice(), DEFAULT_GAS_LIMIT), keyPair.second.toByteArray()
             ).send()
 
             saveContractAddress(context, prefsName, contract.contractAddress)
@@ -92,12 +92,12 @@ object Blockchain {
      * @param prefsName String with the name of the preferences of the user where the hash of the contract is stored.
      * @return status or null if error.
      */
-    fun modTemp(from: Credentials, value: ByteArray, context: Context, prefsName: String): String? {
+    fun modTemp(from: Credentials, value: ByteArray, context: Context, prefsName: String): String {
         return executeContractMethod(context, prefsName, from) {
             val gasLimit = estimateGasForMethodCall("modTemp", value, from.address)
             contract.setGasProvider(StaticGasProvider(updateGasPrice(), gasLimit))
-            contract.modTemp(value).send().transactionHash
-        }
+            contract.modTemp(value).send()
+        } as String
     }
 
     /**
@@ -108,28 +108,27 @@ object Blockchain {
      * @param prefsName String with the name of the preferences of the user where the hash of the contract is stored.
      * @return status or null if error.
      */
-    fun getRef(from: Credentials, deviceID: String, context: Context, prefsName: String): String? {
+    fun getRef(from: Credentials, deviceID: String, context: Context, prefsName: String): String {
         return executeContractMethod(context, prefsName, from) {
-            contract.getRef(deviceID).send().toString()
-        }
+            contract.getRef(deviceID).send()
+        } as String
     }
 
 
     /**
      * Method that calls the addDevice function defined in the SKMSC contract.
      * @param from Credentials of the account calling the method.
-     * @param plugin Bip32ECKeyPair of the newly configured plugin.
+     * @param plugin plugin's account address.
      * @param context Context of the app.
      * @param prefsName String with the name of the preferences of the user where the hash of the contract is stored.
      * @return status or null if error.
      */
-    fun addDevice(from: Credentials, plugin: Bip32ECKeyPair, context: Context, prefsName: String): String? {
-        val pub = Credentials.create(plugin).address
+    fun addDevice(from: Credentials, plugin: String, context: Context, prefsName: String): String {
         return executeContractMethod(context, prefsName, from) {
-            val gasLimit = estimateGasForMethodCall("addDevice", pub, from.address)
+            val gasLimit = estimateGasForMethodCall("addDevice", plugin, from.address)
             contract.setGasProvider(StaticGasProvider(updateGasPrice(), gasLimit))
-            contract.addDevice(pub).send().transactionHash
-        }
+            contract.addDevice(plugin).send()
+        } as String
     }
 
     /**
@@ -180,7 +179,7 @@ object Blockchain {
      * @param from Credentials of the account calling the method.
      * @param contractMethod function that returns the transactionHash of the method called.
      */
-    private fun executeContractMethod(context: Context, prefsName: String, from: Credentials, contractMethod: () -> String?): String? {
+    private fun executeContractMethod(context: Context, prefsName: String, from: Credentials, contractMethod: () -> Any?): Any? {
         if (!::web3.isInitialized) {
             connect(context.getString(R.string.BLOCKCHAIN_IP))
         }
@@ -188,18 +187,16 @@ object Blockchain {
         return if (!::contract.isInitialized) {
             try {
                 initContract(context, prefsName, from)
-                val transactionHash = contractMethod()
-                val transactionReceipt = transactionHash?.let { getTxReceipt(it) }
-                transactionReceipt?.result?.status
+                val result = contractMethod()
+                handleResult(result)
             } catch (e: Exception) {
                 Log.e("Error", e.toString())
                 e.message
             }
         } else {
             try {
-                val transactionHash = contractMethod()
-                val transactionReceipt = transactionHash?.let { getTxReceipt(it) }
-                transactionReceipt?.result?.status
+                val result = contractMethod()
+                handleResult(result)
             } catch (e: Exception) {
                 Log.e("Error", e.toString())
                 e.message
@@ -207,6 +204,21 @@ object Blockchain {
         }
     }
 
+    /**
+     * Helper method to handle the result from the contract method call.
+     * @param result The result from the contract method call, can be a TransactionReceipt or a getter result (Any).
+     * @return The status if it's a transaction, or the getter result.
+     */
+    private fun handleResult(result: Any?): Any? {
+        return when (result) {
+            is TransactionReceipt ->{
+                val transactionReceipt = result.transactionHash?.let { getTxReceipt(it) }
+                transactionReceipt?.result?.status
+
+            } // It's a transaction receipt, return the transaction hash
+            else -> result // It's a getter result
+        }
+    }
 
     /**
      * Method that estimates the gas cost for ETH transfer.
@@ -216,16 +228,16 @@ object Blockchain {
      * @param gasPrice
      */
     private fun estimateGasForEthTransfer(nonce: BigInteger, recipientAddress: String, value: BigInteger, gasPrice: BigInteger): BigInteger {
-        val tx = Transaction.createEtherTransaction(MAIN_ADDRESS, nonce, gasPrice, BigInteger.ZERO, recipientAddress, value)
+        val tx = Transaction.createEtherTransaction(MAIN_ADDRESS, nonce, gasPrice, DEFAULT_GAS_LIMIT, recipientAddress, value)
         return web3.ethEstimateGas(tx).send().amountUsed ?: throw Exception("Gas estimation failed")
     }
 
-    private fun estimateGasForContractDeployment(nonce: BigInteger): BigInteger {
+    private fun estimateGasForContractDeployment(nonce: BigInteger, value: BigInteger): BigInteger {
         val tx = Transaction.createContractTransaction(
             MAIN_ADDRESS,
             nonce,
             web3.ethGasPrice().send().gasPrice,
-            BigInteger.ZERO, // Gas limit for estimation
+            DEFAULT_GAS_LIMIT, // Gas limit for estimation
             BigInteger.ZERO, // Value to send with the transaction
             SKM_SC.BINARY
         )
