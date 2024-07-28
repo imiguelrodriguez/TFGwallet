@@ -15,8 +15,9 @@
         android:layout_marginTop="16dp"
         android:layout_marginEnd="16dp"
         android:layout_marginBottom="16dp"
+        android:gravity="center"
         android:text="@string/welcome"
-        android:textColor="#B39DDB"
+        android:textColor="@color/binaryBlack"
         android:textSize="48sp"
         android:textStyle="bold"
         app:layout_constraintBottom_toTopOf="@+id/cardView"
@@ -46,9 +47,10 @@
 
             <EditText
                 android:id="@+id/username"
-                android:layout_width="250dp"
+                android:layout_width="270dp"
                 android:layout_height="50dp"
                 android:layout_marginTop="16dp"
+                android:autofillHints="emailAddress"
                 android:drawableStart="@drawable/baseline_person_24"
                 android:drawablePadding="6dp"
                 android:drawableTint="@color/colorPrimary"
@@ -58,15 +60,16 @@
                 android:textSize="20sp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
-                android:autofillHints="emailAddress" />
+                app:layout_constraintTop_toTopOf="parent" />
 
             <EditText
                 android:id="@+id/password"
-                android:layout_width="250dp"
+                android:layout_width="270dp"
                 android:layout_height="50dp"
                 android:layout_marginTop="32dp"
+                android:autofillHints="password"
                 android:drawableStart="@drawable/baseline_lock_24"
+                android:drawableEnd="@drawable/ic_eye_closed"
                 android:drawablePadding="6dp"
                 android:drawableTint="@color/colorPrimary"
                 android:ems="10"
@@ -76,16 +79,16 @@
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/username"
-                android:autofillHints="password" />
+                app:passwordToggleEnabled="true" />
 
             <TextView
                 android:id="@+id/forgottenPass"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:text="Forgot password?"
+                android:text="@string/lost_your_device"
                 android:textColor="@color/colorAccent"
-                android:textSize="20sp"
+                android:textSize="22sp"
                 android:textStyle="bold"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
@@ -110,7 +113,7 @@
                     android:layout_marginLeft="16dp"
                     android:layout_marginRight="16dp"
                     android:backgroundTint="@color/colorPrimary"
-                    android:text="LOG IN"
+                    android:text="@string/action_log_in"
                     android:textAlignment="center"
                     android:textColor="@color/binaryWhite"
                     android:textSize="34sp"
@@ -127,7 +130,7 @@
                 android:layout_marginTop="20dp"
                 android:layout_marginEnd="165dp"
                 android:layout_marginBottom="49dp"
-                android:text="Don't have an account? Sign up!"
+                android:text="@string/dont_have_sign_up"
                 android:textColor="@color/colorPrimary"
                 android:textSize="20sp"
                 android:textStyle="bold"

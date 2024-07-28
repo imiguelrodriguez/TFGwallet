@@ -1,15 +1,22 @@
 package com.example.tfgwallet.ui
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
+import android.content.res.Configuration
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.text.method.HideReturnsTransformationMethod
+import android.text.method.PasswordTransformationMethod
 import android.util.Log
+import android.view.MotionEvent
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.biometric.BiometricManager
 import androidx.core.content.ContextCompat
+import com.example.tfgwallet.R
 import com.example.tfgwallet.databinding.ActivityLoginBinding
+import com.example.tfgwallet.model.KeyManagement
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
 
@@ -19,14 +26,26 @@ import com.google.firebase.auth.FirebaseAuth
  */
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityLoginBinding
-
+    private var isPasswordVisible = false
+    @SuppressLint("ClickableViewAccessibility")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityLoginBinding.inflate(layoutInflater)
-        val view = binding.root
-        setContentView(view)
-        FirebaseApp.initializeApp(this)
-        setup(binding)
+        if (intent.hasExtra("session_expired")) {
+            intent.getStringExtra("session_expired")?.let { showAlert("Session expired", it) }
+        }
+        setContentView(binding.root)
+        binding.password.setOnTouchListener { _, event ->
+            if (event.action == MotionEvent.ACTION_UP) {
+                if (event.rawX >= (binding.password.right - binding.password.compoundDrawables[2].bounds.width())) {
+                    isPasswordVisible = !isPasswordVisible
+                    updatePasswordVisibility()
+                    binding.password.performClick() // Call performClick for accessibility
+                }
+            }
+            false
+        }
+        setup()
     }
 
     /**
@@ -47,15 +66,6 @@ class MainActivity : AppCompatActivity() {
         return context.getSharedPreferences("my_prefs", Context.MODE_PRIVATE).getString("lastLoggedInUserId", null)
     }
 
-    /**
-     * Method that retrieves if the given user is logged-in from the Shared Preferences
-     * @param context app context
-     * @param userId String indicating the username
-     * @return true if logged-in, false otherwise (note that if that entry does not exist, false will also be returned)
-     */
-    private fun isLoggedIn(context: Context, userId: String): Boolean {
-        return context.getSharedPreferences("user_$userId", Context.MODE_PRIVATE).getBoolean("isLoggedIn", false)
-    }
 
     /**
      * Method that retrieves if the 2AF is enabled for given user from the Shared Preferences
@@ -67,68 +77,65 @@ class MainActivity : AppCompatActivity() {
         return context.getSharedPreferences("user_$userId", Context.MODE_PRIVATE).getBoolean("isTwoFactorAuthEnabled", false)
     }
 
-    private fun setup(binding: ActivityLoginBinding) {
+    private fun updatePasswordVisibility() {
+        if (isPasswordVisible) {
+            binding.password.transformationMethod = HideReturnsTransformationMethod.getInstance()
+            binding.password.setCompoundDrawablesWithIntrinsicBounds(R.drawable.baseline_lock_24, 0, R.drawable.ic_eye_open, 0)
+        } else {
+            binding.password.transformationMethod = PasswordTransformationMethod.getInstance()
+            binding.password.setCompoundDrawablesWithIntrinsicBounds(R.drawable.baseline_lock_24, 0, R.drawable.ic_eye_closed, 0)
+        }
+        binding.password.setSelection(binding.password.text.length)
+    }
+
+    private fun setup() {
         val lastLoggedInUserId = getLastLoggedInUserId(this)
 
         // autocomplete if last user is still logged in
         if (lastLoggedInUserId != null) {
-            Log.i("Last user", lastLoggedInUserId)
-            val user = lastLoggedInUserId.substringBefore("@")
-            val loggedIn = isLoggedIn(this, user)
-            Log.i("Logged in?", loggedIn.toString())
-            if (loggedIn) {
-                binding.username.setText(lastLoggedInUserId)
-            }
+            binding.username.setText(lastLoggedInUserId)
         }
 
         binding.logInButton.setOnClickListener {
-            FirebaseAuth.getInstance().signInWithEmailAndPassword(
-                binding.username.text.toString(),
-                binding.password.text.toString()
-            )
-                .addOnCompleteListener {
-                    if (it.isSuccessful) {
-                        val homeIntent = Intent(this, HomeActivity::class.java).apply {
-                            putExtra("email", binding.username.text.toString())
-                        }
-                        // save log in status and 2AF preferences
-                        val user = binding.username.text.toString().substringBefore("@")
-                        val sharedPrefs = getSharedPreferences("user_$user", Context.MODE_PRIVATE)
+            val email = binding.username.text.toString()
+            val password = binding.password.text.toString()
 
-                        val editor = sharedPrefs.edit()
-                        editor.putBoolean("isLoggedIn", true).apply()
-
-                        Log.i("Pref", sharedPrefs.all.toString())
-                        homeIntent.flags =
-                            Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK
-
-                        if (isTwoFactorAuthEnabled(this, user)) {
-                            askForTwoFactorAuth { isAuthenticated ->
-                               val auth = isAuthenticated as Boolean
-                               if (auth) {
-                                   setLastLoggedInUserId(this, binding.username.text.toString())
-                                   startActivity(homeIntent)
-                                   finish()
-                               }
-                           }
-                        }
-                        else {
-                            setLastLoggedInUserId(this, binding.username.text.toString())
-                            startActivity(homeIntent)
-                            finish()
-                        }
-
-                    } else {
-                        showAlert("Error", "Problem signing in for user ${binding.username.text}")
+            if (email.isNotEmpty() && password.isNotEmpty()) {
+                val user = email.substringBefore("@")
+                val sharedPrefs = getSharedPreferences("credentials", Context.MODE_PRIVATE)
+                val savedEmail = sharedPrefs.getString("email_$user", null)
+                val savedPassword = sharedPrefs.getString("password_$user", null)
+                val hashedPassword = KeyManagement.sha512(password)
+                if (savedEmail == email && savedPassword == hashedPassword) {
+                    saveLoginTimestamp()
+                    val homeIntent = Intent(this, HomeActivity::class.java).apply {
+                        putExtra("email", email)
                     }
+                    homeIntent.flags = Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK
+                    if (isTwoFactorAuthEnabled(this, user)) {
+                        askForTwoFactorAuth { isAuthenticated ->
+                            if (isAuthenticated) {
+                                setLastLoggedInUserId(this, email)
+                                startActivity(homeIntent)
+                                finish()
+                            }
+                        }
+                    } else {
+                        setLastLoggedInUserId(this, email)
+                        startActivity(homeIntent)
+                        finish()
+                    }
+                } else {
+                    showAlert("Error", "Invalid email or password")
                 }
+            } else {
+                showAlert("Error", "Please fill in all the fields!")
+            }
         }
-
 
         binding.signUp.setOnClickListener {
             val signUpIntent = Intent(this@MainActivity, SignUpActivity::class.java)
             startActivity(signUpIntent)
-
         }
 
         binding.forgottenPass.setOnClickListener {
@@ -197,4 +204,13 @@ class MainActivity : AppCompatActivity() {
         val dialog: AlertDialog = builder.create()
         dialog.show()
     }
+
+
+    private fun saveLoginTimestamp() {
+        val sharedPrefs = getSharedPreferences("user_${binding.username.text.toString().substringBefore("@")}", Context.MODE_PRIVATE)
+        val editor = sharedPrefs.edit()
+        editor.putLong("loginTimestamp", System.currentTimeMillis())
+        editor.apply()
+    }
+
 }
