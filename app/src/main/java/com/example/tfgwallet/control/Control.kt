@@ -1,30 +1,15 @@
 package com.example.tfgwallet.control
 
 import android.content.Context
-import android.security.keystore.KeyGenParameterSpec
-import android.security.keystore.KeyProperties
 import android.util.Log
-import com.example.tfgwallet.databinding.ActivitySignupBinding
 import com.example.tfgwallet.model.Blockchain
+import com.example.tfgwallet.model.IPFSManager
 import com.example.tfgwallet.model.KeyManagement
-import com.example.tfgwallet.model.Protocols
-import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.async
+import kotlinx.coroutines.withContext
 import org.web3j.crypto.Bip32ECKeyPair
 import org.web3j.crypto.Credentials
-import java.io.ByteArrayInputStream
-import java.io.ByteArrayOutputStream
-import java.io.ObjectInputStream
-import java.io.ObjectOutputStream
 import java.math.BigInteger
-import java.security.KeyStore
-import java.security.PrivateKey
-import java.security.PublicKey
-import javax.crypto.Cipher
-import javax.crypto.KeyGenerator
-import javax.crypto.spec.GCMParameterSpec
 
 /**
  * MVC: Controller for UI
@@ -32,154 +17,165 @@ import javax.crypto.spec.GCMParameterSpec
  */
 class Control {
     companion object {
+        private const val TAG = "Control"
+
         /**
-         * Method that calls the Blockchain.connect() method in an asynchronous way.
+         * Method that asynchronously deploys the SKM Smart Contract.
          * @param context app context
          * @param user String indicating the user logged in
          */
-        @OptIn(DelicateCoroutinesApi::class)
-        suspend fun deploySKM_SC(context: Context, user: String): String {
-            val contractAddress: String
-            val res = GlobalScope.async(Dispatchers.IO) {
-                return@async Blockchain.deploySKM_SC(context, "user_$user")
+        suspend fun deploySKMSC(context: Context, user: String): String {
+            return withContext(Dispatchers.IO) {
+                Blockchain.deploySKMSC(context, "user_$user").toString()
             }
-            contractAddress = res.await()
-            return contractAddress
-        }
-
-        @OptIn(ExperimentalUnsignedTypes::class)
-        fun executeBIP32(seed: UByteArray): Protocols.Companion.Bip32 {
-            return Protocols.Companion.Bip32(seed)
-        }
-
-        @OptIn(ExperimentalUnsignedTypes::class)
-        fun executeBIP39(size: Int, password: String, context: Context): Pair<String, UByteArray> {
-            val bip39 = Protocols.Companion.Bip39(size, password, context)
-            return bip39.getSeed()
-        }
-
-        fun storeKeys(bip32: Protocols.Companion.Bip32) {
-
-            // Initialize the cipher with the new IV
-            val keyGenerator = KeyGenerator
-                .getInstance(KeyProperties.KEY_ALGORITHM_AES, "AndroidKeyStore")
-
-            val keyGenParameterSpec = KeyGenParameterSpec.Builder(
-                "secret_key",
-                KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT
-            )
-                .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
-                .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
-                .setRandomizedEncryptionRequired(false) // Disable randomized encryption to use custom IV
-                .build()
-
-            keyGenerator.init(keyGenParameterSpec)
-            val secretKey = keyGenerator.generateKey()
-
-            // Initialize the cipher with the new IV
-            var cipher = Cipher.getInstance("AES/GCM/NoPadding")
-            cipher.init(Cipher.ENCRYPT_MODE, secretKey)
-
-            // Encrypt the data
-            val keyPair = Pair(bip32.privateKey, bip32.publicKey)
-            val outputStream = ByteArrayOutputStream()
-            val objectOutputStream = ObjectOutputStream(outputStream)
-            objectOutputStream.writeObject(keyPair)
-            objectOutputStream.close()
-            val iv = cipher.iv
-
-            val encryptedData = cipher.doFinal(outputStream.toByteArray())
-
-            // decrypt
-            val keyStore = KeyStore.getInstance("AndroidKeyStore")
-            keyStore.load(null)
-
-            val s = keyStore
-                .getEntry("secret_key", null)
-            val sKey = (s as KeyStore.SecretKeyEntry).secretKey
-            cipher = Cipher.getInstance("AES/GCM/NoPadding")
-            val spec = GCMParameterSpec(128, iv)
-            cipher.init(Cipher.DECRYPT_MODE, sKey, spec)
-
-            val decodedData = cipher.doFinal(encryptedData)
-            val inputStream = ByteArrayInputStream(decodedData)
-            val objectInputStream = ObjectInputStream(inputStream)
-            val keyPairDecoded = objectInputStream.readObject() as Pair<PrivateKey, PublicKey>
-            objectInputStream.close()
 
         }
 
-
-        @OptIn(DelicateCoroutinesApi::class)
-        suspend fun setUp(binding: ActivitySignupBinding, context: Context): String {
+        /**
+         * Method that performs the set up of the user's account initializing and funding
+         * his account in the blockchain. It also stores the encrypted master keys in the secure storage
+         * of the device.
+         * @param user username.
+         * @param password user password.
+         * @param context app context.
+         * @return 24 mnemonic words.
+         */
+        suspend fun setUp(user: String, password: String, context: Context): String {
             val mnemonicList = KeyManagement.generateMnemonic()
-
             val mnemonic = mnemonicList.joinToString(separator = " ")
-            val masterKeyPair = KeyManagement.generateKeyPair(mnemonicList, binding.password.text.toString())
+            val masterKeyPair = KeyManagement.generateKeyPair(mnemonicList, password)
 
-            val user = binding.username.text.toString().substringBefore("@")
             KeyManagement.encryptRSA(masterKeyPair, user, context)
 
             val acc = Credentials.create(masterKeyPair)
-            Log.i("Address", acc.address)
+            Log.i(TAG, "Address ${acc.address}")
 
-            val res = GlobalScope.async(Dispatchers.IO) {
+            withContext(Dispatchers.IO) {
                 Blockchain.send(context, acc.address)
             }
-            res.await()
             return mnemonic
         }
 
-        @OptIn(ExperimentalStdlibApi::class, DelicateCoroutinesApi::class)
-        suspend fun generateBrowserKeys(context: Context, user: String, contents: String, prefsName: String): String {
-            val keyPair: Triple<BigInteger, BigInteger, ByteArray>? = KeyManagement.decryptRsa("$user/login$user.bin", user, context)
-            if (keyPair != null) {
-                val id = contents.takeLast(64)
-                Log.i("Key", "Your private key is ${keyPair.first} and public key is ${keyPair.second}")
-                Log.i("Chain code", "Your chain code is ${BigInteger(keyPair.third)}")
-                val path = intArrayOf(id.substring(0, 8).hexToInt(HexFormat.Default) or Bip32ECKeyPair.HARDENED_BIT)
-                val sessionKey = contents.take(contents.length - 64).hexToByteArray()
-                try {
-                    val master = Bip32ECKeyPair.create(keyPair.first, keyPair.third)
-                    val brKeyPair = KeyManagement.generateBrowserKeyPair(master, path)
-                    Log.i("Browser Key", "Private key is ${brKeyPair.privateKey}")
-                    Log.i("Key size", "Private ${brKeyPair.privateKey.toByteArray().size}  Public ${brKeyPair.publicKey.toByteArray().size}")
-                    val from = Credentials.create(master)
-                    Log.i("Address", from.address)
-                    var status = ""
-                    val res = GlobalScope.async(Dispatchers.IO) {
-                        status = Blockchain.addDevice(from, brKeyPair, context, prefsName).toString()
-                        // it is necessary to fund the account of the plugin in order to being able to call methods from the plugin
-                        Blockchain.send(context, Credentials.create(brKeyPair).address)
-                        //  removed +id.hexToByteArray() + ByteArray(64) to the output of encryption
-                        val encrypted = KeyManagement.encryptWithSessionKey(brKeyPair, sessionKey)
-                        Blockchain.modTemp(from, encrypted, context, prefsName)
-                    }
-                    res.await()
-                    return status
-                } catch (e: Exception) {
-                    Log.e("Error", e.toString())
-                    return "Error"
-                }
-            }
-            else{
-                Log.i("Problem", "problem with key")
-                return "Error"
+        suspend fun generateBrowserKeys(
+            context: Context,
+            user: String,
+            contents: String,
+            prefsName: String
+        ): String {
+            val keyPair = KeyManagement.decryptRSA("$user/login$user.bin", user, context)
+            return keyPair?.let {
+                handleBrowserKeyGeneration(context, user, contents, prefsName, it)
+            } ?: run {
+                Log.i(TAG, "Problem with key")
+                "Error in key"
             }
         }
 
-        fun recoverKeys(user: String, mnemonic: String, password: String, context: Context) {
-            // Root Secret Key (SK0) and Root Chain code C0.
-            val masterKeyPair = KeyManagement.generateKeyPair(mnemonic.split(" ") as MutableList<String>, password)
-            val username = user.substringBefore("@")
+        @OptIn(ExperimentalStdlibApi::class)
+        private suspend fun handleBrowserKeyGeneration(
+            context: Context, user: String, contents: String, prefsName: String,
+            keyPair: Triple<BigInteger, BigInteger, ByteArray>
+        ): String {
+            val id = contents.takeLast(64)
+            Log.i(TAG, "Private key: ${keyPair.first}, Public key: ${keyPair.second}")
+            Log.i(TAG, "Chain code: ${BigInteger(keyPair.third)}")
+            val path = intArrayOf(
+                id.substring(0, 8).hexToInt(HexFormat.Default) or Bip32ECKeyPair.HARDENED_BIT
+            )
+            val sessionKey = contents.take(contents.length - 64).hexToByteArray()
 
+            return try {
+                val master = Bip32ECKeyPair.create(keyPair.first, keyPair.third)
+                val brKeyPair = KeyManagement.generateBrowserKeyPair(master, path)
+                Log.i(TAG, "Browser Private Key: ${brKeyPair.privateKey}")
+                val from = Credentials.create(master)
+                Log.i(TAG, "Plugin Address: ${from.address}")
+                handleBlockchainAddDevice(context, from, brKeyPair, prefsName, sessionKey)
+            } catch (e: Exception) {
+                Log.e(TAG, "Error: ${e.message}", e)
+                e.message ?: "Unknown error"
+            }
+        }
+
+        private suspend fun handleBlockchainAddDevice(
+            context: Context,
+            from: Credentials,
+            plugin: Bip32ECKeyPair,
+            prefsName: String,
+            sessionKey: ByteArray
+        ): String {
+            var status: String
+            val pluginAddress = Credentials.create(plugin).address
+            withContext(Dispatchers.IO) {
+                status = Blockchain.addDevice(from, pluginAddress, context, prefsName).toString()
+                if (status != "0x1") {
+                    status = "Plugin already configured"
+                } else {
+                    Blockchain.send(context, pluginAddress) // fund plugin account
+                    updatePluginAddresses(context, prefsName, pluginAddress)
+                    val encrypted = KeyManagement.encryptWithSessionKey(plugin, sessionKey)
+                    Blockchain.modTemp(from, encrypted, context, prefsName)
+                }
+            }
+            return status
+        }
+
+        private fun updatePluginAddresses(
+            context: Context,
+            prefsName: String,
+            pluginAddress: String
+        ) {
+            val prefs = context.getSharedPreferences(prefsName, Context.MODE_PRIVATE)
+            val prevPlugins = prefs.getString("pluginAddresses", "")
+            val updatedPlugins = if (prevPlugins.isNullOrEmpty()) {
+                pluginAddress
+            } else {
+                "$prevPlugins;$pluginAddress"
+            }
+            prefs.edit().putString("pluginAddresses", updatedPlugins).apply()
+        }
+
+        suspend fun control(
+            context: Context,
+            user: String,
+            pluginAddress: String,
+            prefsName: String
+        ): String {
+            val keyPair = KeyManagement.decryptRSA("$user/login$user.bin", user, context)
+            return keyPair?.let {
+                val master = Bip32ECKeyPair.create(it.first, it.third)
+                val from = Credentials.create(master)
+                withContext(Dispatchers.IO) {
+                    Blockchain.getRef(from, pluginAddress, context, prefsName).toString()
+                }
+            } ?: ""
+        }
+
+        fun recoverKeys(email: String, mnemonic: String, password: String, context: Context) {
+            // Root Secret Key (SK0) and Root Chain code C0.
+            val masterKeyPair =
+                KeyManagement.generateKeyPair(mnemonic.split(" ") as MutableList<String>, password)
+            val user = email.substringBefore("@")
             // Store SK0 in the smartphone’s secure storage
-            KeyManagement.encryptRSA(masterKeyPair, username, context)
+            KeyManagement.encryptRSA(masterKeyPair, user, context)
             val acc = Credentials.create(masterKeyPair)
 
             // Look for the SKM SC deployed using the key pair (SK0, P K0) int the BC, and store its hash, hSC , in the app storage
             val contractAddress = Blockchain.lookForSChashInBC(acc.address)
-
+            val userPreferences = context.getSharedPreferences("user_$user", Context.MODE_PRIVATE)
+            userPreferences.edit().putString("contractAddress", contractAddress).apply()
+            val sharedPreferences = context.getSharedPreferences("credentials", Context.MODE_PRIVATE)
+            val hashedPassword = KeyManagement.sha512(password)
+            with(sharedPreferences.edit()) {
+                putString("email_$user", email)
+                putString("password_$user", hashedPassword)
+                apply()
+            }
         }
+
+        fun getDataFromIPFS(ref: String, context: Context): String {
+            return IPFSManager.getString(ref, context)
+        }
+
     }
 }

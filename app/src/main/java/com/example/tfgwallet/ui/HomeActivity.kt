@@ -1,7 +1,7 @@
 package com.example.tfgwallet.ui
 
 import android.content.Context
-import android.content.res.Configuration
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import androidx.appcompat.app.AlertDialog
@@ -10,35 +10,32 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentTransaction
 import com.example.tfgwallet.R
-import com.example.tfgwallet.control.Control
 import com.example.tfgwallet.databinding.ActivityHomeBinding
-import com.example.tfgwallet.model.Blockchain
 import com.example.tfgwallet.model.IPFSManager
 import com.example.tfgwallet.model.KeyManagement
 import com.example.tfgwallet.ui.fragments.HomeFragment
+import com.example.tfgwallet.ui.fragments.InfoFragment
 import com.example.tfgwallet.ui.fragments.KeysFragment
 import com.example.tfgwallet.ui.fragments.SettingsFragment
-import com.google.firebase.annotations.concurrent.Background
 import io.ipfs.kotlin.model.NamedHash
+import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
-import java.io.File
 import java.math.BigInteger
 
+private const val EXPIRATION_TIME = 15
 
 class HomeActivity : AppCompatActivity() {
     private lateinit var binding: ActivityHomeBinding
-
-    @OptIn(ExperimentalStdlibApi::class)
+    private lateinit var user: String
+    @OptIn(ExperimentalStdlibApi::class, DelicateCoroutinesApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         binding = ActivityHomeBinding.inflate(layoutInflater)
-        val view = binding.root
-        setContentView(view)
+        setContentView(binding.root)
         val intent = intent
-        var user = ""
         var keyPair : Triple<BigInteger, BigInteger, ByteArray> = Triple(BigInteger.ZERO,
             BigInteger.ZERO, byteArrayOf(0)
         )
@@ -47,20 +44,15 @@ class HomeActivity : AppCompatActivity() {
             if (email != null) {
                 user = email.substringBefore("@")
                 Log.i("Email", user)
-                keyPair = KeyManagement.decryptRsa("$user/login$user.bin", user,this)!!
-                if (keyPair != null) {
-                    Log.i("Key", "Your private key is ${keyPair.first} and public key is ${keyPair.second}")
-                    Log.i("Chain code", "Your chain code is ${BigInteger(keyPair.third)}")
+                keyPair = KeyManagement.decryptRSA("$user/login$user.bin", user,this)!!
+                Log.i("Key", "Your private key is ${keyPair.first} and public key is ${keyPair.second}")
+                Log.i("Chain code", "Your chain code is ${BigInteger(keyPair.third)}")
 
-                }
             }
         }
 
             replaceFragment(HomeFragment())
         val context = this
-        GlobalScope.async(Dispatchers.IO) {
-            connectToIPFS(context)
-        }
 
         binding.bottomNavigationView.setOnItemSelectedListener {
             when(it.itemId) {
@@ -68,21 +60,23 @@ class HomeActivity : AppCompatActivity() {
                 R.id.settings -> replaceFragment(SettingsFragment.newInstance(user))
                 R.id.keys -> replaceFragment(KeysFragment.newInstance(user, keyPair.first.toString(16), keyPair.second.toString(16), keyPair.third.toHexString(
                     HexFormat.Default)))
+                R.id.info -> replaceFragment(InfoFragment())
                 else -> {
                     true
                 }
             }
         }
     }
+    @OptIn(DelicateCoroutinesApi::class)
     private suspend fun connectToIPFS(context: Context) {
         val res = GlobalScope.async(Dispatchers.IO) {
             val file: NamedHash
             try {
-                IPFSManager.connect(context)
+
                 //val file = ipfsManager.addFile(File(assets.("english.txt")))
-                val string = IPFSManager.addString("test", "this is a test")
-                val recovered = IPFSManager.getString(string.Hash)
-                val recovered2 = IPFSManager.getString("bafkreife2klsil6kaxqhvmhgldpsvk5yutzm4i5bgjoq6fydefwtihnesa")
+                val string = IPFSManager.addString("test", "this is a test", context)
+                val recovered = IPFSManager.getString(string.Hash, context)
+                val recovered2 = IPFSManager.getString("bafkreife2klsil6kaxqhvmhgldpsvk5yutzm4i5bgjoq6fydefwtihnesa", context)
                 return@async Pair(string, recovered + recovered2)
                 showAlert("SUCCESS", "${file.Name} with hash ${file.Hash}")
             } catch (e: java.lang.Exception) {
@@ -104,8 +98,17 @@ class HomeActivity : AppCompatActivity() {
     }
 
     override fun onBackPressed() {
-      finish()
+      moveTaskToBack(true)
     }
+
+    override fun onResume() {
+        super.onResume()
+        if (isSessionExpired()) {
+            logoutUser()
+        }
+    }
+
+
     private fun replaceFragment(fragment: Fragment): Boolean {
         val fragmentManager: FragmentManager  = supportFragmentManager
         val fragmentTransaction: FragmentTransaction = fragmentManager.beginTransaction()
@@ -116,14 +119,26 @@ class HomeActivity : AppCompatActivity() {
 
     private fun showAlert(title: String, message: String) {
         val builder = AlertDialog.Builder(this)
-        builder.setTitle(title)
-        builder.setMessage(message)
-        builder.setPositiveButton("Accept", null)
-        val dialog: AlertDialog = builder.create()
-        dialog.show()
+            .setTitle(title)
+            .setMessage(message)
+            .setPositiveButton("Accept", null)
+            .setCancelable(false)  // Prevents closing the dialog by clicking outside
+        builder.create().show()
     }
 
-    override fun onConfigurationChanged(newConfig: Configuration) {
-        super.onConfigurationChanged(newConfig)
+    private fun isSessionExpired(): Boolean {
+        val sharedPrefs = getSharedPreferences("user_${user}", Context.MODE_PRIVATE)
+        val loginTimestamp = sharedPrefs.getLong("loginTimestamp", 0)
+        val currentTime = System.currentTimeMillis()
+        val fifteenMinutesInMillis = EXPIRATION_TIME * 60 * 1000
+        return (currentTime - loginTimestamp) > fifteenMinutesInMillis
+    }
+
+    private fun logoutUser() {
+        val loginIntent = Intent(this, MainActivity::class.java)
+        loginIntent.flags = Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK
+        loginIntent.putExtra("session_expired", "The session has expired due to inactivity, please log in again.")
+        startActivity(loginIntent)
+        finish()
     }
 }

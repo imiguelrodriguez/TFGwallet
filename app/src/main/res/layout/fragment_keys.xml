@@ -13,7 +13,7 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="32dp"
-        android:text="Master key"
+        android:text="@string/master_key"
         android:textAlignment="center"
         android:textColor="@color/crypticPurple"
         android:textSize="34sp"
@@ -49,7 +49,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/masterNoKeys">
+        app:layout_constraintTop_toBottomOf="@id/masterText">
 
     </androidx.recyclerview.widget.RecyclerView>
 
@@ -58,15 +58,35 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="32dp"
-        android:text="Browser keys"
+        android:text="@string/browser_keys"
         android:textAlignment="center"
         android:textColor="@color/crypticPurple"
         android:textSize="34sp"
         android:textStyle="bold"
-        app:layout_constraintBottom_toBottomOf="@+id/browserNoKeys"
+        app:layout_constraintBottom_toBottomOf="@id/loadKeys"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/masterRecycler" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/loadKeys"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginBottom="12dp"
+        android:backgroundTint="@color/colorPrimary"
+        android:text="@string/load_keys"
+        android:textAlignment="center"
+        android:textColor="@color/binaryWhite"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        app:cornerRadius="16dp"
+        app:layout_constraintBottom_toTopOf="@id/browserNoKeys"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/browserText" />
 
     <TextView
         android:id="@+id/browserNoKeys"
@@ -74,13 +94,13 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center"
         android:layout_marginTop="8dp"
-
+        android:layout_marginBottom="8dp"
         android:text="@string/no_keys"
         android:textSize="24sp"
-        app:layout_constraintBottom_toBottomOf="@id/masterRecycler"
+        app:layout_constraintBottom_toTopOf="@id/browserRecycler"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/browserText" />
+        app:layout_constraintTop_toBottomOf="@id/loadKeys" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/browserRecycler"
@@ -93,7 +113,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/browserNoKeys"
+        app:layout_constraintTop_toBottomOf="@id/loadKeys"
         app:layout_constraintVertical_bias="0.461" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

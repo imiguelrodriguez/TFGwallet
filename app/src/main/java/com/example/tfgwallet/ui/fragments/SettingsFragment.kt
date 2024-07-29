@@ -2,7 +2,6 @@ package com.example.tfgwallet.ui.fragments
 
 import android.content.Context
 import android.os.Bundle
-import android.preference.PreferenceManager
 import android.util.Log
 import android.widget.Toast
 import androidx.preference.PreferenceFragmentCompat
