@@ -11,6 +11,23 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
+        <TextView
+            android:id="@+id/qrTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="8dp"
+            android:text="@string/scan_qr_title"
+            android:textAlignment="center"
+            android:textColor="@color/crypticPurple"
+            android:textSize="34sp"
+            android:textStyle="bold"
+            app:layout_constraintBottom_toTopOf="@+id/guideline3"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
         <androidx.constraintlayout.widget.Guideline
             android:id="@+id/guideline3"
             android:layout_width="69dp"
@@ -38,7 +55,7 @@
             android:layout_marginTop="16dp"
             android:layout_marginEnd="32dp"
             android:backgroundTint="@color/colorPrimary"
-            android:text="Scan QR"
+            android:text="@string/scan_qr"
             android:textAlignment="center"
             android:textColor="@color/binaryWhite"
             android:textSize="22sp"

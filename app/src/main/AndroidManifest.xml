@@ -23,12 +23,11 @@
             android:theme="@style/Theme.TFGwallet.NoActionBar"
             android:configChanges="orientation"/>
         <activity
-            android:name=".ui.MainActivity"
+            android:name="com.example.tfgwallet.ui.MainActivity"
             android:exported="true"
             android:configChanges="orientation">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
@@ -36,10 +35,12 @@
         <activity android:name=".ui.SignUpActivity"  android:configChanges="orientation"/>
         <activity android:name=".ui.MnemonicsActivity"  android:configChanges="orientation"/>
         <activity android:name=".ui.QRCodeScannerActivity"  android:configChanges="orientation"/>
+        <activity android:name=".ui.DAppBrowserKeys"  android:configChanges="orientation"/>
         <activity android:name="com.journeyapps.barcodescanner.CaptureActivity"
-            android:screenOrientation="fullSensor"
             android:stateNotNeeded="true"
-            tools:replace="android:screenOrientation"/>
+            tools:replace="android:screenOrientation"
+            android:screenOrientation="fullSensor"
+            android:configChanges="orientation"/>
     </application>
 
 </manifest>
