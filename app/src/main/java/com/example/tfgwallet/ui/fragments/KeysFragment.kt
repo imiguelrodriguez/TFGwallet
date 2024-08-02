@@ -9,6 +9,7 @@ import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
@@ -21,20 +22,22 @@ import com.example.tfgwallet.databinding.FragmentKeysBinding
 import com.example.tfgwallet.model.KeyItem
 import com.example.tfgwallet.model.KeyManagement
 import com.example.tfgwallet.model.MasterKeyItem
-import com.example.tfgwallet.model.Quadruple
+import com.example.tfgwallet.ui.BrowserKeyItemAdapter
 import com.example.tfgwallet.ui.DAppBrowserKeys
 import com.example.tfgwallet.ui.KeyItemAdapter
 import com.example.tfgwallet.ui.MasterKeyItemAdapter
-import com.example.tfgwallet.ui.QRCodeScannerActivity
 import it.xabaras.android.recyclerview.swipedecorator.RecyclerViewSwipeDecorator
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import okhttp3.internal.trimSubstring
+import org.web3j.crypto.Credentials
+import java.math.BigInteger
 
-private const val ARG_PARAM1 = "user"
-private const val ARG_PARAM2 = "privKey"
-private const val ARG_PARAM3 = "pubKey"
-private const val ARG_PARAM4 = "chainCode"
+private const val USER_ARG = "user"
+private const val PRIVKEY_ARG = "privKey"
+private const val PUBKEY_ARG = "pubKey"
+private const val CHAINCODE_ARG = "chainCode"
 
 
 class KeysFragment : Fragment() {
@@ -49,10 +52,10 @@ class KeysFragment : Fragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         arguments?.let {
-            user = it.getString(ARG_PARAM1).toString()
-            privKey = it.getString(ARG_PARAM2).toString()
-            pubKey = it.getString(ARG_PARAM3).toString()
-            chainCode = it.getString(ARG_PARAM4).toString()
+            user = it.getString(USER_ARG).toString()
+            privKey = it.getString(PRIVKEY_ARG).toString()
+            pubKey = it.getString(PUBKEY_ARG).toString()
+            chainCode = it.getString(CHAINCODE_ARG).toString()
         }
     }
 
@@ -70,44 +73,31 @@ class KeysFragment : Fragment() {
     }
 
     private fun fetchAndProcessKeys() {
-        val prefs = context?.getSharedPreferences("user_$user", Context.MODE_PRIVATE)
-        val plugins = prefs?.getString("pluginAddresses", "") ?: ""
-
-        if (plugins.isNotEmpty()) {
-            val keysList: ArrayList<KeyItem> = ArrayList()
+        val browserFiles = KeyManagement.getBrowserKeysPaths(requireContext(), user)
+        val keysList: ArrayList<KeyItem> = ArrayList()
+        val browserTitles: ArrayList<String> = ArrayList()
+        if (browserFiles.isNotEmpty()) {
             binding.browserNoKeys.text = getString(R.string.loading_keys)
 
-            viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
-                val refs = plugins.split(";").map { plugin ->
-                    Control.control(requireContext(), user, plugin, "user_$user")
-                }
-
-                refs.forEach { ref ->
-                    val hashes = Control.getDataFromIPFS(ref, requireContext()).split("\n")
-                    hashes.forEach { hash ->
-                        val data = Control.getDataFromIPFS(hash, requireContext())
-                        val decryptedData = KeyManagement.decryptIPFSData(data, "user_$user", requireContext())
-                        if (decryptedData != null) {
-                            Log.i("Decrypted data", decryptedData.toString())
-                            keysList.add(decryptedDataToKeyItem(decryptedData))
-                        }
-                    }
-                }
-
-                withContext(Dispatchers.Main) {
-                    setupBrowserRecyclerView(keysList)
-                }
+            browserFiles.forEach {
+                browserFile ->
+                val decryptedData = KeyManagement.decryptRSA(browserFile.substringAfter(requireContext().getDir("users", Context.MODE_PRIVATE).path), user, requireContext())
+                keysList.add(decryptedDataToKeyItem(decryptedData))
+                browserTitles.add(browserFile.substringBeforeLast('.').substringAfterLast('/')) // get rid of .bin
             }
+            setupBrowserRecyclerView(keysList, browserTitles)
         }
     }
 
     @OptIn(ExperimentalStdlibApi::class)
-    private fun decryptedDataToKeyItem(decryptedData: Quadruple<ByteArray, ByteArray, ByteArray, ByteArray>): KeyItem {
-        return KeyItem(
-            "0x" + decryptedData.first.toHexString(HexFormat.Default),
-            "0x" + decryptedData.second.toHexString(HexFormat.Default),
-            "0x" + decryptedData.third.toHexString(HexFormat.Default)
-        )
+    private fun decryptedDataToKeyItem(decryptedData: Triple<BigInteger, BigInteger, ByteArray>?): KeyItem {
+        return if (decryptedData != null) {
+            KeyItem(
+                "0x" + decryptedData.first.toString(16),
+                "0x" + decryptedData.second.toString(16),
+                "0x" + decryptedData.third.toHexString(HexFormat.Default)
+            )
+        } else KeyItem("0x", "0x", "0x")
     }
 
     private fun setupMasterRecyclerView() {
@@ -116,9 +106,9 @@ class KeysFragment : Fragment() {
         masterRecyclerView.adapter = mAdapter
     }
 
-    private fun setupBrowserRecyclerView(keys: List<KeyItem>) {
+    private fun setupBrowserRecyclerView(keys: List<KeyItem>, browserTitles: List<String>) {
         binding.browserNoKeys.visibility = View.INVISIBLE
-        bAdapter = KeyItemAdapter(keys)
+        bAdapter = BrowserKeyItemAdapter(keys, browserTitles)
         val browserRecyclerView = binding.browserRecycler
         browserRecyclerView.layoutManager = LinearLayoutManager(context, LinearLayoutManager.VERTICAL, false)
         browserRecyclerView.adapter = bAdapter
@@ -129,7 +119,10 @@ class KeysFragment : Fragment() {
             }
 
             override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
+                val address = Credentials.create(viewHolder.itemView.findViewById<TextView>(R.id.privKey).text.toString()).address
                 val dAppIntent = Intent(this@KeysFragment.requireContext(), DAppBrowserKeys::class.java)
+                dAppIntent.putExtra("address", address)
+                dAppIntent.putExtra("user", user)
                 startActivity(dAppIntent)
             }
 
@@ -168,10 +161,10 @@ class KeysFragment : Fragment() {
         fun newInstance(param1: String, param2: String, param3: String, param4: String) =
             KeysFragment().apply {
                 arguments = Bundle().apply {
-                    putString(ARG_PARAM1, param1)
-                    putString(ARG_PARAM2, param2)
-                    putString(ARG_PARAM3, param3)
-                    putString(ARG_PARAM4, param4)
+                    putString(USER_ARG, param1)
+                    putString(PRIVKEY_ARG, param2)
+                    putString(PUBKEY_ARG, param3)
+                    putString(CHAINCODE_ARG, param4)
                 }
             }
     }

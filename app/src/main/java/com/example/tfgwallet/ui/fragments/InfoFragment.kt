@@ -13,16 +13,12 @@ import com.example.tfgwallet.ui.StepsAdapter
 
 /**
  * A simple [Fragment] subclass.
- * Use the [InfoFragment.newInstance] factory method to
- * create an instance of this fragment.
  */
 class InfoFragment : Fragment() {
-    // TODO: Rename and change types of parameters
 
     private lateinit var binding: FragmentInfoBinding
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         binding = FragmentInfoBinding.inflate(layoutInflater)
 
     }
@@ -30,12 +26,12 @@ class InfoFragment : Fragment() {
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
+    ): View {
         binding.recyclerViewSteps.layoutManager = LinearLayoutManager(requireContext())
 
         val steps = listOf(
             Step(1, "Please, scan the QR code to register the plugin in the app."),
-            Step(2, "You will find all the keys in the keys section."),
+            Step(2, "You will find all the keys in the keys section. Swipe left in the browser keys to see information about the dApps."),
             Step(3, "You can enable/disable 2AF at anytime in the settings section.")
         )
 

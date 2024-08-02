@@ -16,7 +16,7 @@ internal class MasterKeyItemAdapter(private val masterKeys: List<MasterKeyItem>)
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MasterKeyItemViewHolder {
             val itemView: View = LayoutInflater.from(parent.context)
-                .inflate(R.layout.key_swipe_item, parent, false)
+                .inflate(R.layout.master_key_item, parent, false)
             return MasterKeyItemViewHolder(itemView)
         }
 

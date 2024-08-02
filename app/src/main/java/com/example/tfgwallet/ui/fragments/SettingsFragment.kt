@@ -4,6 +4,7 @@ import android.content.Context
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
+import androidx.appcompat.view.ContextThemeWrapper
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.SwitchPreferenceCompat
 import com.example.tfgwallet.R
@@ -16,6 +17,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
         arguments?.let {
             user = it.getString(ARG_PARAM1).toString()
         }
+
         val twoaf = findPreference<SwitchPreferenceCompat>("2af")
         val userPreferences = context?.getSharedPreferences("user_$user", Context.MODE_PRIVATE)
         twoaf?.isChecked = userPreferences?.getBoolean("isTwoFactorAuthEnabled", false) == true
@@ -33,8 +35,6 @@ class SettingsFragment : PreferenceFragmentCompat() {
             }
             true // Return true to update the preference value
         }
-
-
 
     }
     companion object {

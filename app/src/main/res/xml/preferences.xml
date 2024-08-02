@@ -3,21 +3,14 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <PreferenceCategory
-
         android:title="Log in"
         app:icon="@drawable/baseline_lock_24">
-
 
     </PreferenceCategory>
 
     <SwitchPreferenceCompat
         app:key="2af"
         app:title="@string/enable_2af" />
-
-    <Preference
-        app:key="feedback"
-        app:title="Send feedback"
-        app:summary="Report technical issues or suggest new features"/>
 
 
 </PreferenceScreen>

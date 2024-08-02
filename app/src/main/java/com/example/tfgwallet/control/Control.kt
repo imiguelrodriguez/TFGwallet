@@ -88,8 +88,9 @@ class Control {
                 val master = Bip32ECKeyPair.create(keyPair.first, keyPair.third)
                 val brKeyPair = KeyManagement.generateBrowserKeyPair(master, path)
                 Log.i(TAG, "Browser Private Key: ${brKeyPair.privateKey}")
+                KeyManagement.encryptRSA(brKeyPair, user, context, browser = true, id)
                 val from = Credentials.create(master)
-                Log.i(TAG, "Plugin Address: ${from.address}")
+                Log.i(TAG, "Account Address: ${from.address}")
                 handleBlockchainAddDevice(context, from, brKeyPair, prefsName, sessionKey)
             } catch (e: Exception) {
                 Log.e(TAG, "Error: ${e.message}", e)
@@ -151,6 +152,7 @@ class Control {
             } ?: ""
         }
 
+        // TODO add browser key storage...
         fun recoverKeys(email: String, mnemonic: String, password: String, context: Context) {
             // Root Secret Key (SK0) and Root Chain code C0.
             val masterKeyPair =
